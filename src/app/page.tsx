@@ -397,24 +397,9 @@ export default function Home() {
         />
       )}
 
-      {showRoleModal && (
-        <RoleSelectionModal
-          isOpen={showRoleModal}
-          onClose={() => setShowRoleModal(false)}
-          onRoleSelect={(role) => {
-            setShowRoleModal(false);
-            setShowLoginModal(true);
-          }}
-        />
-      )}
 
-      {showAuthSuccess && (
-        <AuthSuccess
-          isOpen={showAuthSuccess}
-          onClose={() => setShowAuthSuccess(false)}
-          method={authMethod}
-        />
-      )}
+
+    
     </Layout>
   );
 }
