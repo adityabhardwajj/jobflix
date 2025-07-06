@@ -1,3 +1,6 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function Contact() {
   return (
     <div className="max-w-2xl mx-auto">

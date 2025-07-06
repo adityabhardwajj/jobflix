@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, Suspense } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
   Briefcase, 
@@ -19,10 +19,27 @@ import {
   XCircle,
   Star,
   Download,
-  Upload
+  Upload,
+  LogOut,
+  Search,
+  Filter,
+  TrendingUp,
+  Target,
+  AlertCircle,
+  BarChart3,
+  PieChart,
+  Activity,
+  Users,
+  Plus,
+  Share2,
+  MoreHorizontal
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import ApplicationTracker from '../components/ApplicationTracker';
+import { useToastHelpers } from '../components/Toast';
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 // Mock data for demonstration
 const mockUser = {

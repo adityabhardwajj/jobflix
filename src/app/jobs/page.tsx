@@ -21,6 +21,9 @@ import AdvancedSearch from '../components/AdvancedSearch';
 import { JobCardSkeleton } from '../components/LoadingSkeleton';
 import { useToastHelpers } from '../components/Toast';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 interface Job {
   id: number;
   title: string;
