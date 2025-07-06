@@ -2,10 +2,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from 'next-themes';
 
 export default function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
+  };
 
   return (
     <motion.button
@@ -13,15 +17,15 @@ export default function ThemeToggle() {
       className="relative p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      aria-label={`Switch to ${resolvedTheme === 'light' ? 'dark' : 'light'} mode`}
     >
       <motion.div
         initial={false}
-        animate={{ rotate: theme === 'dark' ? 180 : 0 }}
+        animate={{ rotate: resolvedTheme === 'dark' ? 180 : 0 }}
         transition={{ duration: 0.3 }}
         className="relative w-5 h-5"
       >
-        {theme === 'light' ? (
+        {resolvedTheme === 'light' ? (
           <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
         ) : (
           <Sun className="w-5 h-5 text-yellow-500" />

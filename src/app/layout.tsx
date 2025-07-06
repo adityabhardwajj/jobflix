@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { ThemeProvider } from "next-themes";
 import { ToastProvider } from "./components/Toast";
 // import Navbar from "./components/Navbar";
 
@@ -22,9 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable}`}>
+    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <body className="antialiased min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
-        <ThemeProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <ToastProvider>
             <div className="min-h-full">
               {/* <Navbar /> */}
