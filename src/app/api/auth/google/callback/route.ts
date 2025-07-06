@@ -6,13 +6,17 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
     const error = searchParams.get('error');
 
+    // Get the host from headers instead of request.url
+    const host = request.headers.get('host') || 'localhost:3000';
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+
     if (error) {
       // Handle OAuth error
-      return NextResponse.redirect(new URL(`/auth/error?error=${encodeURIComponent(error)}`, request.url));
+      return NextResponse.redirect(`${protocol}://${host}/auth/error?error=${encodeURIComponent(error)}`);
     }
 
     if (!code) {
-      return NextResponse.redirect(new URL('/auth/error?error=no_code', request.url));
+      return NextResponse.redirect(`${protocol}://${host}/auth/error?error=no_code`);
     }
 
     // In a real implementation, you would:
@@ -25,9 +29,11 @@ export async function GET(request: NextRequest) {
     console.log('Google OAuth code received:', code);
 
     // For now, redirect to home page with success message
-    return NextResponse.redirect(new URL('/?auth=success&method=google', request.url));
+    return NextResponse.redirect(`${protocol}://${host}/?auth=success&method=google`);
   } catch (error) {
     console.error('Google OAuth callback error:', error);
-    return NextResponse.redirect(new URL('/auth/error?error=callback_failed', request.url));
+    const host = request.headers.get('host') || 'localhost:3000';
+    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    return NextResponse.redirect(`${protocol}://${host}/auth/error?error=callback_failed`);
   }
 } 
