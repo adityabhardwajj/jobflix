@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -162,8 +162,16 @@ export default function Dashboard() {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <Layout>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <motion.div
@@ -461,6 +469,7 @@ export default function Dashboard() {
           </motion.div>
         </div>
       </div>
-    </Layout>
+      </Layout>
+    </Suspense>
   );
 } 
