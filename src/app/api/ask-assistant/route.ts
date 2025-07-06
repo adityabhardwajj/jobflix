@@ -3,8 +3,13 @@ import OpenAI from 'openai';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || '',
 });
+
+// Check if API key is configured
+if (!process.env.OPENAI_API_KEY) {
+  console.error('OPENAI_API_KEY environment variable is not set');
+}
 
 // Simple rate limiting
 const requestTimestamps = new Map<string, number[]>();
@@ -29,6 +34,14 @@ function isRateLimited(ip: string): boolean {
 
 export async function POST(request: Request) {
   try {
+    // Check if API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: 'OpenAI API key is not configured. Please contact the administrator.' },
+        { status: 500 }
+      );
+    }
+
     // Get client IP
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
     
