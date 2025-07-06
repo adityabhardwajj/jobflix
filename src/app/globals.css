@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #4F46E5;
+    --primary-dark: #4338CA;
+    --secondary: #6366F1;
+    --accent: #8B5CF6;
+    --background: #FFFFFF;
+    --foreground: #1F2937;
+    --muted: #6B7280;
+    --muted-background: #F3F4F6;
+    --border: #E5E7EB;
+    --input: #E5E7EB;
+    --ring: #4F46E5;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: #111827;
+    --foreground: #F9FAFB;
+    --muted: #9CA3AF;
+    --muted-background: #1F2937;
+    --border: #374151;
+    --input: #374151;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-dark hover:shadow-lg;
+  }
+
+  .btn-secondary {
+    @apply bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md transition-colors duration-300;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-white hover:bg-accent/90 hover:shadow-lg;
+  }
+
+  .input {
+    @apply w-full px-4 py-2 rounded-lg border border-input bg-background dark:bg-gray-800 text-foreground dark:text-white focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-300;
+  }
+
+  .select {
+    @apply w-full px-4 py-2 rounded-lg border border-input bg-background dark:bg-gray-800 text-foreground dark:text-white focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-300;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700;
+  }
+
+  .job-card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-t-4 border-primary;
+  }
+
+  .job-title {
+    @apply text-xl font-bold text-primary dark:text-blue-400;
+  }
+
+  .job-meta {
+    @apply flex items-center gap-2 text-muted dark:text-gray-400;
+  }
+
+  .nav-link {
+    @apply text-muted dark:text-gray-300 hover:text-foreground dark:hover:text-white transition-colors duration-300;
+  }
+
+  .nav-link-active {
+    @apply text-primary dark:text-blue-400 font-medium;
+  }
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+  }
+
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden clip-rect-0 whitespace-nowrap border-0;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted-background dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-gray-600 rounded-full hover:bg-gray-500 dark:hover:bg-gray-500;
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(79, 70, 229, 0.2);
+  color: var(--primary);
+}
+
+/* Dark mode selection */
+.dark ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: #60A5FA;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
