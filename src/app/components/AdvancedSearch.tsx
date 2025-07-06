@@ -89,12 +89,25 @@ export default function AdvancedSearch({ onSearch, onClear }: AdvancedSearchProp
   };
 
   const toggleArrayFilter = (key: keyof SearchFilters, value: string) => {
-    setFilters(prev => ({
+  setFilters(prev => {
+  const current = prev[key as keyof SearchFilters];
+
+  if (Array.isArray(current)) {
+    const exists = current.includes(value);
+    return {
       ...prev,
-      [key]: prev[key as keyof SearchFilters]?.includes(value)
-        ? (prev[key as keyof SearchFilters] as string[]).filter(item => item !== value)
-        : [...(prev[key as keyof SearchFilters] as string[] || []), value]
-    }));
+      [key]: exists
+        ? current.filter(item => item !== value)
+        : [...current, value],
+    };
+  }
+
+  return {
+    ...prev,
+    [key]: [value],
+  };
+});
+
   };
 
   const handleSearch = () => {
