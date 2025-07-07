@@ -12,6 +12,8 @@ import RoleSelectionModal from './components/RoleSelectionModal';
 import TechNewsSection from './components/TechNewsSection';
 import JobCard from './components/JobCard';
 import AuthSuccess from './components/AuthSuccess';
+import TechAgentAvatar from './components/TechAgentAvatar';
+import JobApplicationModal from './components/JobApplicationModal';
 
 // Type definitions
 interface Job {
@@ -123,6 +125,8 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [showAuthSuccess, setShowAuthSuccess] = useState(false);
   const [authMethod, setAuthMethod] = useState<string>('');
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -176,6 +180,16 @@ export default function Home() {
     setSelectedSalaries([]);
   };
 
+  const handleJobApply = (job: Job) => {
+    setSelectedJob(job);
+    setShowApplicationModal(true);
+  };
+
+  const handleApplicationClose = () => {
+    setShowApplicationModal(false);
+    setSelectedJob(null);
+  };
+
   if (!isMounted) {
     return null;
   }
@@ -186,7 +200,7 @@ export default function Home() {
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
         {/* Animated Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center mix-blend-overlay opacity-50" />
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center mix-blend-overlay opacity-50" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent" />
           
           {/* Animated Shapes */}
@@ -199,17 +213,7 @@ export default function Home() {
 
         {/* Hero Content */}
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-5xl md:text-7xl font-bold mb-6 leading-tight"
-          >
-            Find Your Dream
-            <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-              Tech Job
-            </span>
-          </motion.h1>
+          <TechAgentAvatar />
           
           <motion.p
             initial={{ opacity: 0, y: 30 }}
@@ -217,7 +221,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-xl md:text-2xl mb-8 text-gray-200 max-w-2xl mx-auto"
           >
-            Connect with top tech companies and discover opportunities that match your skills and aspirations
+            Whether you hire or hustle — we make it simple
           </motion.p>
 
           <motion.div
@@ -343,7 +347,10 @@ export default function Home() {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <JobCard job={job} />
+                  <JobCard 
+                    job={job} 
+                    onApply={() => handleJobApply(job)}
+                  />
                 </motion.div>
               ))}
             </div>
@@ -394,6 +401,14 @@ export default function Home() {
         <LoginModal
           isOpen={showLoginModal}
           onClose={() => setShowLoginModal(false)}
+        />
+      )}
+
+      {showApplicationModal && selectedJob && (
+        <JobApplicationModal
+          isOpen={showApplicationModal}
+          onClose={handleApplicationClose}
+          job={selectedJob}
         />
       )}
 

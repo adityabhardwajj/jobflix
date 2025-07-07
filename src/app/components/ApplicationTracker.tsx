@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, 
@@ -16,11 +16,19 @@ import {
   Trash2,
   Plus,
   Filter,
-  Search
+  Search,
+  TrendingUp,
+  SortAsc,
+  SortDesc,
+  MessageSquare,
+  MoreHorizontal,
+  Star,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface Application {
-  id: number;
+  id: string;
   jobTitle: string;
   company: string;
   location: string;
@@ -28,15 +36,26 @@ interface Application {
   appliedDate: string;
   status: 'applied' | 'reviewing' | 'interview' | 'offer' | 'rejected' | 'withdrawn';
   lastUpdate: string;
-  nextStep: string;
+  nextStep?: string;
   notes: string;
   logo: string;
   isUrgent: boolean;
+  daysSinceApplied: number;
+  accentColor: string;
+  priority?: 'low' | 'medium' | 'high';
+  recruiterContact?: string;
+  interviewDate?: string;
+}
+
+interface ApplicationTrackerProps {
+  applications?: Application[];
+  onUpdateApplication?: (id: string, updates: Partial<Application>) => void;
+  onWithdrawApplication?: (id: string) => void;
 }
 
 const mockApplications: Application[] = [
   {
-    id: 1,
+    id: "1",
     jobTitle: "Senior Frontend Developer",
     company: "TechCorp Inc.",
     location: "San Francisco, CA",
@@ -47,10 +66,13 @@ const mockApplications: Application[] = [
     nextStep: "Technical interview on Jan 25th",
     notes: "Great company culture, excited about the role. Need to prepare for React/TypeScript technical questions.",
     logo: "https://logo.clearbit.com/google.com",
-    isUrgent: true
+    isUrgent: true,
+    daysSinceApplied: 3,
+    accentColor: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300",
+    priority: "high"
   },
   {
-    id: 2,
+    id: "2",
     jobTitle: "Backend Engineer",
     company: "StartupXYZ",
     location: "New York, NY",
@@ -61,10 +83,13 @@ const mockApplications: Application[] = [
     nextStep: "Awaiting response from hiring manager",
     notes: "Applied through referral. Company seems to be growing rapidly.",
     logo: "https://logo.clearbit.com/microsoft.com",
-    isUrgent: false
+    isUrgent: false,
+    daysSinceApplied: 4,
+    accentColor: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300",
+    priority: "medium"
   },
   {
-    id: 3,
+    id: "3",
     jobTitle: "UI/UX Designer",
     company: "Design Studio",
     location: "Remote",
@@ -75,10 +100,13 @@ const mockApplications: Application[] = [
     nextStep: "Application under review",
     notes: "Remote position, great for work-life balance. Portfolio was well-received.",
     logo: "https://logo.clearbit.com/airbnb.com",
-    isUrgent: false
+    isUrgent: false,
+    daysSinceApplied: 6,
+    accentColor: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300",
+    priority: "low"
   },
   {
-    id: 4,
+    id: "4",
     jobTitle: "DevOps Engineer",
     company: "CloudTech Solutions",
     location: "Austin, TX",
@@ -89,10 +117,13 @@ const mockApplications: Application[] = [
     nextStep: "Review offer details and respond by Jan 24th",
     notes: "Excellent offer! Need to negotiate benefits and start date.",
     logo: "https://logo.clearbit.com/amazon.com",
-    isUrgent: true
+    isUrgent: true,
+    daysSinceApplied: 2,
+    accentColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    priority: "high"
   },
   {
-    id: 5,
+    id: "5",
     jobTitle: "Full Stack Developer",
     company: "Innovation Labs",
     location: "Seattle, WA",
@@ -103,7 +134,10 @@ const mockApplications: Application[] = [
     nextStep: "None",
     notes: "Rejected after technical interview. Need to improve system design skills.",
     logo: "https://logo.clearbit.com/netflix.com",
-    isUrgent: false
+    isUrgent: false,
+    daysSinceApplied: 7,
+    accentColor: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    priority: "medium"
   }
 ];
 
@@ -111,7 +145,7 @@ const statusConfig = {
   applied: { 
     label: 'Applied', 
     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
-    icon: FileText 
+    icon: Clock 
   },
   reviewing: { 
     label: 'Under Review', 
@@ -140,290 +174,476 @@ const statusConfig = {
   }
 };
 
-export default function ApplicationTracker() {
-  const [applications, setApplications] = useState<Application[]>(mockApplications);
-  const [filteredApplications, setFilteredApplications] = useState<Application[]>(mockApplications);
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [editingApplication, setEditingApplication] = useState<Application | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+const ApplicationTracker: React.FC<ApplicationTrackerProps> = ({
+  applications = mockApplications,
+  onUpdateApplication,
+  onWithdrawApplication
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'company' | 'status' | 'priority'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
-  // Filter applications
-  React.useEffect(() => {
-    let filtered = applications;
+  const statusOptions = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'applied', label: 'Applied' },
+    { value: 'reviewing', label: 'Under Review' },
+    { value: 'interview', label: 'Interview' },
+    { value: 'offer', label: 'Offer' },
+    { value: 'rejected', label: 'Rejected' }
+  ];
 
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(app => app.status === selectedStatus);
+  const priorityOptions = [
+    { value: 'all', label: 'All Priorities' },
+    { value: 'high', label: 'High Priority' },
+    { value: 'medium', label: 'Medium Priority' },
+    { value: 'low', label: 'Low Priority' }
+  ];
+
+  const sortOptions = [
+    { value: 'date', label: 'Application Date' },
+    { value: 'company', label: 'Company' },
+    { value: 'status', label: 'Status' },
+    { value: 'priority', label: 'Priority' }
+  ];
+
+  const filteredAndSortedApplications = useMemo(() => {
+    let filtered = applications.filter(app => {
+      const matchesSearch = 
+        app.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.location.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || app.priority === priorityFilter;
+      
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.appliedDate).getTime() - new Date(b.appliedDate).getTime();
+          break;
+        case 'company':
+          comparison = a.company.localeCompare(b.company);
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+        case 'priority':
+          const priorityOrder = { high: 3, medium: 2, low: 1 };
+          comparison = (priorityOrder[a.priority || 'low'] || 0) - (priorityOrder[b.priority || 'low'] || 0);
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [applications, searchTerm, statusFilter, priorityFilter, sortBy, sortOrder]);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'applied': return <Clock className="w-4 h-4" />;
+      case 'reviewing': return <Eye className="w-4 h-4" />;
+      case 'interview': return <MessageSquare className="w-4 h-4" />;
+      case 'offer': return <CheckCircle className="w-4 h-4" />;
+      case 'rejected': return <XCircle className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
     }
-
-    if (searchQuery) {
-      filtered = filtered.filter(app => 
-        app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        app.company.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    setFilteredApplications(filtered);
-  }, [applications, selectedStatus, searchQuery]);
-
-  const handleStatusChange = (applicationId: number, newStatus: Application['status']) => {
-    setApplications(prev => 
-      prev.map(app => 
-        app.id === applicationId 
-          ? { ...app, status: newStatus, lastUpdate: new Date().toISOString().split('T')[0] }
-          : app
-      )
-    );
   };
 
-  const handleDeleteApplication = (applicationId: number) => {
-    setApplications(prev => prev.filter(app => app.id !== applicationId));
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-600 dark:text-red-400';
+      case 'medium': return 'text-yellow-600 dark:text-yellow-400';
+      case 'low': return 'text-green-600 dark:text-green-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
   };
 
-  const getStatusCount = (status: string) => {
-    return applications.filter(app => status === 'all' ? true : app.status === status).length;
+  const handleStatusUpdate = (applicationId: string, newStatus: Application['status']) => {
+    if (onUpdateApplication) {
+      onUpdateApplication(applicationId, { status: newStatus });
+    }
+  };
+
+  const handleWithdraw = (applicationId: string) => {
+    if (onWithdrawApplication) {
+      onWithdrawApplication(applicationId);
+    }
+  };
+
+  const stats = {
+    total: applications.length,
+    applied: applications.filter(app => app.status === 'applied').length,
+    reviewing: applications.filter(app => app.status === 'reviewing').length,
+    interview: applications.filter(app => app.status === 'interview').length,
+    offer: applications.filter(app => app.status === 'offer').length,
+    rejected: applications.filter(app => app.status === 'rejected').length,
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Application Tracker
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Application Tracker</h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Track your job applications and stay organized
+            Track and manage your job applications
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Application</span>
-        </motion.button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        {Object.entries(statusConfig).map(([status, config]) => (
-          <motion.div
-            key={status}
-            whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 cursor-pointer"
-            onClick={() => setSelectedStatus(selectedStatus === status ? 'all' : status)}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {getStatusCount(status)}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {config.label}
-                </p>
-              </div>
-              <div className={`p-2 rounded-lg ${config.color}`}>
-                <config.icon className="w-4 h-4" />
-              </div>
-            </div>
-          </motion.div>
-        ))}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 cursor-pointer"
-          onClick={() => setSelectedStatus('all')}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {applications.length}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Total
-              </p>
-            </div>
-            <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-              <FileText className="w-4 h-4" />
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search applications..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-200"
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-400" />
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors duration-200"
-            >
-              <option value="all">All Status</option>
-              {Object.entries(statusConfig).map(([status, config]) => (
-                <option key={status} value={status}>
-                  {config.label} ({getStatusCount(status)})
-                </option>
-              ))}
-            </select>
-          </div>
+            <Filter className="w-4 h-4 mr-2" />
+            Filters
+            {showFilters ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
+          </button>
         </div>
       </div>
 
-      {/* Applications List */}
-      <div className="space-y-4">
-        <AnimatePresence>
-          {filteredApplications.map((application) => (
-            <motion.div
-              key={application.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all duration-300"
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <img
-                      src={application.logo}
-                      alt={application.company}
-                      className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-600"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://via.placeholder.com/48x48/3B82F6/FFFFFF?text=' + application.company.charAt(0);
-                      }}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {application.jobTitle}
-                        </h3>
-                        {application.isUrgent && (
-                          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-full text-xs font-medium">
-                            Urgent
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        <div className="flex items-center space-x-1">
-                          <Building2 className="w-4 h-4" />
-                          <span>{application.company}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <MapPin className="w-4 h-4" />
-                          <span>{application.location}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <DollarSign className="w-4 h-4" />
-                          <span>{application.salary}</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        {application.notes}
-                      </p>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                        <span>Applied: {application.appliedDate}</span>
-                        <span>Updated: {application.lastUpdate}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <select
-                      value={application.status}
-                      onChange={(e) => handleStatusChange(application.id, e.target.value as Application['status'])}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                    >
-                      {Object.entries(statusConfig).map(([status, config]) => (
-                        <option key={status} value={status}>
-                          {config.label}
-                        </option>
-                      ))}
-                    </select>
-                    
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setEditingApplication(application)}
-                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </motion.button>
-                    
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleDeleteApplication(application.id)}
-                      className="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </div>
-                
-                {/* Status Badge */}
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusConfig[application.status].color}`}>
-                      {React.createElement(statusConfig[application.status].icon, { className: "w-3 h-3 mr-1" })}
-                      {statusConfig[application.status].label}
-                    </span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Next: {application.nextStep}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        {Object.entries(stats).map(([key, value]) => (
+          <div key={key} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+              {key === 'total' ? 'Total' : key}
+            </p>
+          </div>
+        ))}
+      </div>
 
-        {/* No Results */}
-        {filteredApplications.length === 0 && (
+      {/* Filters */}
+      <AnimatePresence>
+        {showFilters && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700"
           >
-            <div className="max-w-md mx-auto">
-              <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-12 h-12 text-gray-400" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Search */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Search
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Job title, company, location..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                No applications found
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                {searchQuery || selectedStatus !== 'all' 
-                  ? 'Try adjusting your search criteria'
-                  : 'Start by adding your first job application'
-                }
-              </p>
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedStatus('all');
-                }}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200"
-              >
-                {searchQuery || selectedStatus !== 'all' ? 'Clear Filters' : 'Add Application'}
-              </button>
+
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Status
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  {statusOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Priority Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Priority
+                </label>
+                <select
+                  value={priorityFilter}
+                  onChange={(e) => setPriorityFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  {priorityOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Sort By
+                </label>
+                <div className="flex space-x-2">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    {sortOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    {sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* Applications List */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Position
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Company
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Applied
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Priority
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredAndSortedApplications.map((application) => (
+                <motion.tr
+                  key={application.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {application.jobTitle}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {application.location} • {application.salary}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-gray-100 dark:bg-gray-600 rounded-lg flex items-center justify-center mr-3">
+                        <Building2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      </div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {application.company}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${application.accentColor}`}>
+                        {getStatusIcon(application.status)}
+                        <span className="ml-1 capitalize">{application.status}</span>
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div>{new Date(application.appliedDate).toLocaleDateString()}</div>
+                    <div className="text-xs">{application.daysSinceApplied} days ago</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className={`flex items-center ${getPriorityColor(application.priority)}`}>
+                      <Star className="w-4 h-4 mr-1" />
+                      <span className="text-sm capitalize">{application.priority || 'low'}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedApplication(application);
+                          setShowDetails(true);
+                        }}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleWithdraw(application.id)}
+                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Application Details Modal */}
+      {showDetails && selectedApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+          >
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Application Details
+              </h3>
+              <button
+                onClick={() => setShowDetails(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                    {selectedApplication.jobTitle}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Company</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{selectedApplication.company}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Location</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{selectedApplication.location}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Salary</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{selectedApplication.salary}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Applied Date</p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {new Date(selectedApplication.appliedDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Update */}
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Update Status</p>
+                  <div className="flex flex-wrap gap-2">
+                    {statusOptions.slice(1).map(option => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleStatusUpdate(selectedApplication.id, option.value as Application['status'])}
+                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                          selectedApplication.status === option.value
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {selectedApplication.notes && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Notes</p>
+                    <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                      {selectedApplication.notes}
+                    </p>
+                  </div>
+                )}
+
+                {/* Next Step */}
+                {selectedApplication.nextStep && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Next Step</p>
+                    <p className="text-gray-900 dark:text-white bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                      {selectedApplication.nextStep}
+                    </p>
+                  </div>
+                )}
+
+                {/* Contact Info */}
+                {selectedApplication.recruiterContact && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Recruiter Contact</p>
+                    <p className="text-gray-900 dark:text-white">{selectedApplication.recruiterContact}</p>
+                  </div>
+                )}
+
+                {/* Interview Date */}
+                {selectedApplication.interviewDate && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Interview Date</p>
+                    <p className="text-gray-900 dark:text-white">
+                      {new Date(selectedApplication.interviewDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => handleWithdraw(selectedApplication.id)}
+                className="px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              >
+                Withdraw Application
+              </button>
+              <button
+                onClick={() => setShowDetails(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
-} 
+};
+
+export default ApplicationTracker; 

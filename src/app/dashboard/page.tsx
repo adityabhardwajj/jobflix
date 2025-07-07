@@ -32,11 +32,19 @@ import {
   Users,
   Plus,
   Share2,
-  MoreHorizontal
+  MoreHorizontal,
+  MessageSquare,
+  Building
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import ApplicationTracker from '../components/ApplicationTracker';
+import UserProfile from '../components/UserProfile';
+import DashboardStats from '../components/DashboardStats';
 import { useToastHelpers } from '../components/Toast';
+import { Progress } from '../components/ProgressBar';
+import NotificationsPanel from '../components/NotificationsPanel';
+import ResumeManager from '../components/ResumeManager';
+import InterviewScheduler from '../components/InterviewScheduler';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -93,46 +101,92 @@ const mockSavedJobs = [
   }
 ];
 
-const mockApplications = [
+interface Application {
+  id: string;
+  jobTitle: string;
+  company: string;
+  location: string;
+  salary: string;
+  appliedDate: string;
+  status: 'applied' | 'reviewing' | 'interview' | 'offer' | 'rejected';
+  lastUpdate: string;
+  nextStep?: string;
+  daysSinceApplied: number;
+  logo: string;
+  accentColor: string;
+}
+
+// Mock data for applications
+const mockApplications: Application[] = [
   {
-    id: 1,
-    title: 'Senior Frontend Developer',
-    company: 'Microsoft',
-    logo: 'https://logo.clearbit.com/microsoft.com',
-    appliedDate: '2024-01-20',
-    status: 'applied',
-    lastUpdate: '2024-01-22',
-    nextStep: 'Technical Interview'
+    id: "1",
+    jobTitle: "Senior Frontend Developer",
+    company: "TechCorp Inc.",
+    location: "San Francisco, CA",
+    salary: "$120k - $150k",
+    appliedDate: "2024-01-15",
+    status: "reviewing",
+    lastUpdate: "2024-01-18",
+    nextStep: "Technical interview scheduled",
+    daysSinceApplied: 3,
+    logo: "https://logo.clearbit.com/google.com",
+    accentColor: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
   },
   {
-    id: 2,
-    title: 'React Developer',
-    company: 'Spotify',
-    logo: 'https://logo.clearbit.com/spotify.com',
-    appliedDate: '2024-01-18',
-    status: 'interview',
-    lastUpdate: '2024-01-21',
-    nextStep: 'Final Round'
+    id: "2",
+    jobTitle: "Backend Engineer",
+    company: "StartupXYZ",
+    location: "Remote",
+    salary: "$90k - $110k",
+    appliedDate: "2024-01-12",
+    status: "interview",
+    lastUpdate: "2024-01-17",
+    nextStep: "Final round interview",
+    daysSinceApplied: 6,
+    logo: "https://logo.clearbit.com/microsoft.com",
+    accentColor: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
   },
   {
-    id: 3,
-    title: 'Frontend Engineer',
-    company: 'Uber',
-    logo: 'https://logo.clearbit.com/uber.com',
-    appliedDate: '2024-01-15',
-    status: 'rejected',
-    lastUpdate: '2024-01-19',
-    nextStep: 'Application Closed'
+    id: "3",
+    jobTitle: "UI/UX Designer",
+    company: "Design Studio",
+    location: "New York, NY",
+    salary: "$80k - $100k",
+    appliedDate: "2024-01-10",
+    status: "applied",
+    lastUpdate: "2024-01-10",
+    nextStep: "Portfolio review",
+    daysSinceApplied: 8,
+    logo: "https://logo.clearbit.com/airbnb.com",
+    accentColor: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
   },
   {
-    id: 4,
-    title: 'UI/UX Developer',
-    company: 'Slack',
-    logo: 'https://logo.clearbit.com/slack.com',
-    appliedDate: '2024-01-12',
-    status: 'offer',
-    lastUpdate: '2024-01-20',
-    nextStep: 'Review Offer'
+    id: "4",
+    jobTitle: "DevOps Engineer",
+    company: "CloudTech Solutions",
+    location: "Austin, TX",
+    salary: "$110k - $130k",
+    appliedDate: "2024-01-08",
+    status: "offer",
+    lastUpdate: "2024-01-16",
+    nextStep: "Review offer details",
+    daysSinceApplied: 10,
+    logo: "https://logo.clearbit.com/amazon.com",
+    accentColor: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+  },
+  {
+    id: "5",
+    jobTitle: "Full Stack Developer",
+    company: "Innovation Labs",
+    location: "Seattle, WA",
+    salary: "$100k - $120k",
+    appliedDate: "2024-01-05",
+    status: "rejected",
+    lastUpdate: "2024-01-14",
+    nextStep: "Apply to similar positions",
+    daysSinceApplied: 13,
+    logo: "https://logo.clearbit.com/netflix.com",
+    accentColor: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
   }
 ];
 
@@ -161,21 +215,109 @@ export default function Dashboard() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [user, setUser] = useState(mockUser);
   const [savedJobs, setSavedJobs] = useState(mockSavedJobs);
-  const [applications, setApplications] = useState(mockApplications);
+  const [applications, setApplications] = useState<Application[]>(mockApplications);
+  const [isMounted, setIsMounted] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showResumeManager, setShowResumeManager] = useState(false);
+  const [showInterviewScheduler, setShowInterviewScheduler] = useState(false);
+  const [profileCompletion, setProfileCompletion] = useState(80); // Example static value
+  const [userProfile, setUserProfile] = useState({
+    personalInfo: {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      phone: '+1 (555) 123-4567',
+      location: 'San Francisco, CA',
+      avatar: '',
+      headline: 'Senior Frontend Developer',
+      bio: 'Passionate frontend developer with expertise in modern web technologies.',
+    },
+    experience: {
+      yearsOfExperience: '5-8',
+      currentRole: 'Senior Frontend Developer',
+      currentCompany: 'TechCorp Inc.',
+      desiredRole: 'Lead Frontend Developer',
+      desiredSalary: '$120,000 - $150,000',
+      workPreference: 'hybrid',
+    },
+    skills: {
+      technical: ['React', 'TypeScript', 'Node.js', 'Next.js'],
+      soft: ['Leadership', 'Communication', 'Problem Solving'],
+      languages: ['JavaScript', 'Python', 'SQL'],
+    },
+    education: {
+      degree: 'Bachelor of Science in Computer Science',
+      institution: 'Stanford University',
+      graduationYear: '2019',
+      gpa: '3.8',
+    },
+    social: {
+      linkedin: 'https://linkedin.com/in/johndoe',
+      github: 'https://github.com/johndoe',
+      portfolio: 'https://johndoe.dev',
+      twitter: '',
+    },
+    preferences: {
+      jobTypes: ['Full-time', 'Remote'],
+      locations: ['San Francisco', 'New York', 'Remote'],
+      remotePreference: 'hybrid',
+      salaryRange: '$100,000 - $150,000',
+      companySize: ['Startup', 'Mid-size'],
+      industries: ['Technology', 'Fintech'],
+    },
+  });
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <User className="w-4 h-4" /> },
     { id: 'profile', label: 'Profile', icon: <Settings className="w-4 h-4" /> },
     { id: 'saved', label: 'Saved Jobs', icon: <Bookmark className="w-4 h-4" /> },
-    { id: 'applications', label: 'Applications', icon: <FileText className="w-4 h-4" /> }
+    { id: 'applications', label: 'Applications', icon: <FileText className="w-4 h-4" /> },
+    { id: 'resumes', label: 'Resumes', icon: <FileText className="w-4 h-4" /> },
+    { id: 'interviews', label: 'Interviews', icon: <Calendar className="w-4 h-4" /> }
   ];
 
   const handleRemoveSavedJob = (jobId: number) => {
     setSavedJobs(prev => prev.filter(job => job.id !== jobId));
   };
 
-  const handleWithdrawApplication = (applicationId: number) => {
+  const handleWithdrawApplication = (applicationId: string) => {
     setApplications(prev => prev.filter(app => app.id !== applicationId));
+  };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
+
+  const stats = {
+    total: applications.length,
+    applied: applications.filter(app => app.status === 'applied').length,
+    reviewing: applications.filter(app => app.status === 'reviewing').length,
+    interview: applications.filter(app => app.status === 'interview').length,
+    offer: applications.filter(app => app.status === 'offer').length,
+    rejected: applications.filter(app => app.status === 'rejected').length,
+  };
+
+  const recentApplications = applications
+    .sort((a, b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime())
+    .slice(0, 3);
+
+  const upcomingInterviews = applications
+    .filter(app => app.status === 'interview')
+    .sort((a, b) => new Date(a.lastUpdate).getTime() - new Date(b.lastUpdate).getTime());
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'applied': return <Clock className="w-4 h-4" />;
+      case 'interview': return <Calendar className="w-4 h-4" />;
+      case 'offer': return <CheckCircle className="w-4 h-4" />;
+      case 'rejected': return <XCircle className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
   };
 
   return (
@@ -194,296 +336,240 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
           >
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage your profile, saved jobs, and applications</p>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Your Job Search Dashboard
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Track your applications and stay organized in your job search
+              </p>
+              <div className="mt-2 w-64">
+                <Progress value={profileCompletion} />
+                <span className="text-xs text-gray-500 dark:text-gray-400">Profile Completion: {profileCompletion}%</span>
+              </div>
+            </div>
+            <button
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => setShowProfileModal(true)}
+            >
+              <User className="w-5 h-5 mr-2" />
+              Edit Profile
+            </button>
           </motion.div>
 
-          {/* Stats Cards */}
+          {/* Stats Overview */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
           >
-            {[
-              { label: 'Saved Jobs', value: savedJobs.length, icon: <Bookmark className="w-6 h-6" />, color: 'bg-blue-500' },
-              { label: 'Applications', value: applications.length, icon: <FileText className="w-6 h-6" />, color: 'bg-green-500' },
-              { label: 'Interviews', value: applications.filter(app => app.status === 'interview').length, icon: <Calendar className="w-6 h-6" />, color: 'bg-yellow-500' },
-              { label: 'Offers', value: applications.filter(app => app.status === 'offer').length, icon: <CheckCircle className="w-6 h-6" />, color: 'bg-purple-500' }
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + index * 0.1 }}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 transition-colors duration-300"
-              >
-                <div className="flex items-center">
-                  <div className={`${stat.color} text-white p-3 rounded-lg`}>
-                    {stat.icon}
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                    <p className="text-gray-600 dark:text-gray-400">{stat.label}</p>
-                  </div>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Applications</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
                 </div>
-              </motion.div>
-            ))}
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Under Review</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.reviewing}</p>
+                </div>
+                <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                  <Eye className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Interviews</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.interview}</p>
+                </div>
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                  <MessageSquare className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Offers</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.offer}</p>
+                </div>
+                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                  <BarChart3 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+            </div>
           </motion.div>
 
-          {/* Tabs */}
+          {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-8 transition-colors duration-300"
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 mb-8"
           >
-            <div className="border-b border-gray-200 dark:border-gray-700">
-              <nav className="flex space-x-8 px-6">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
-              </nav>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <button className="flex items-center justify-center p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <FileText className="w-5 h-5 mr-2" />
+                Apply to New Job
+              </button>
+              <button 
+                className="flex items-center justify-center p-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                onClick={() => setShowInterviewScheduler(true)}
+              >
+                <Calendar className="w-5 h-5 mr-2" />
+                Schedule Interview
+              </button>
+              <button 
+                className="flex items-center justify-center p-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                onClick={() => setShowResumeManager(true)}
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Manage Resumes
+              </button>
+              <button 
+                className="flex items-center justify-center p-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                onClick={() => setShowNotifications(true)}
+              >
+                <Bell className="w-5 h-5 mr-2" />
+                View Notifications
+              </button>
             </div>
+          </motion.div>
 
-            {/* Tab Content */}
-            <div className="p-6">
-              {activeTab === 'overview' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-6"
-                >
-                  {/* Profile Summary */}
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 transition-colors duration-300">
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{user.name}</h3>
-                        <p className="text-gray-600 dark:text-gray-300">{user.title}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{user.location}</p>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab('profile')}
-                        className="ml-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Edit Profile
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Recent Applications */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Applications</h3>
-                    <div className="space-y-3">
-                      {applications.slice(0, 3).map((app) => (
-                        <div key={app.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors duration-300">
-                          <div className="flex items-center space-x-3">
-                            <img src={app.logo} alt={app.company} className="w-8 h-8 rounded" />
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white">{app.title}</p>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{app.company}</p>
-                            </div>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
-                            {app.status}
-                          </span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Recent Applications */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="lg:col-span-2"
+            >
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Applications</h2>
+                <div className="space-y-4">
+                  {recentApplications.map((app) => {
+                    const StatusIcon = getStatusIcon(app.status);
+                    return (
+                      <div key={app.id} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="w-10 h-10 bg-gray-100 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                          <Building className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'profile' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-6"
-                >
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Profile Information</h3>
-                    <button
-                      onClick={() => setIsEditingProfile(!isEditingProfile)}
-                      className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span>{isEditingProfile ? 'Save' : 'Edit'}</span>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
-                      <input
-                        type="text"
-                        value={user.name}
-                        onChange={(e) => setUser({ ...user, name: e.target.value })}
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-                      <input
-                        type="email"
-                        value={user.email}
-                        onChange={(e) => setUser({ ...user, email: e.target.value })}
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
-                      <input
-                        type="tel"
-                        value={user.phone}
-                        onChange={(e) => setUser({ ...user, phone: e.target.value })}
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</label>
-                      <input
-                        type="text"
-                        value={user.location}
-                        onChange={(e) => setUser({ ...user, location: e.target.value })}
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Title</label>
-                      <input
-                        type="text"
-                        value={user.title}
-                        onChange={(e) => setUser({ ...user, title: e.target.value })}
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Experience</label>
-                      <input
-                        type="text"
-                        value={user.experience}
-                        onChange={(e) => setUser({ ...user, experience: e.target.value })}
-                        disabled={!isEditingProfile}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-300"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Skills</label>
-                    <div className="flex flex-wrap gap-2">
-                      {user.skills.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bio</label>
-                    <textarea
-                      value={user.bio}
-                      onChange={(e) => setUser({ ...user, bio: e.target.value })}
-                      disabled={!isEditingProfile}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors duration-300"
-                    />
-                  </div>
-
-                  <div className="flex space-x-4">
-                    <button className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                      <Download className="w-4 h-4" />
-                      <span>Download Resume</span>
-                    </button>
-                    <button className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-                      <Upload className="w-4 h-4" />
-                      <span>Upload New Resume</span>
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'saved' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-4"
-                >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Saved Jobs ({savedJobs.length})</h3>
-                  {savedJobs.map((job) => (
-                    <div key={job.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-all duration-300">
-                      <div className="flex items-center space-x-4">
-                        <img src={job.logo} alt={job.company} className="w-12 h-12 rounded" />
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-white">{job.title}</h4>
-                          <p className="text-gray-600 dark:text-gray-400">{job.company}</p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900 dark:text-white">{app.jobTitle}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{app.company}</p>
+                          <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500 dark:text-gray-400">
                             <span className="flex items-center">
                               <MapPin className="w-3 h-3 mr-1" />
-                              {job.location}
+                              {app.location}
                             </span>
                             <span className="flex items-center">
                               <DollarSign className="w-3 h-3 mr-1" />
-                              {job.salary}
+                              {app.salary}
                             </span>
-                            <span>{job.type}</span>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${app.accentColor}`}>
+                            {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                          </span>
+                          {StatusIcon}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                          Apply Now
-                        </button>
-                        <button
-                          onClick={() => handleRemoveSavedJob(job.id)}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
 
-              {activeTab === 'applications' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-4"
-                >
-                  <ApplicationTracker />
-                </motion.div>
-              )}
-            </div>
+            {/* Upcoming Interviews */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Upcoming Interviews</h2>
+                {upcomingInterviews.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-600 dark:text-gray-400">No upcoming interviews</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {upcomingInterviews.map((app) => (
+                      <div key={app.id} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <h3 className="font-medium text-gray-900 dark:text-white">{app.jobTitle}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{app.company}</p>
+                        <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
+                          {app.nextStep}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Application Tracker */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8"
+          >
+            <ApplicationTracker />
           </motion.div>
+
+          {showProfileModal && (
+            <UserProfile
+              isOpen={showProfileModal}
+              onClose={() => setShowProfileModal(false)}
+              onSave={(data) => {
+                setUserProfile(data);
+                setShowProfileModal(false);
+                // Optionally update profileCompletion here
+              }}
+              initialData={userProfile}
+            />
+          )}
+
+          {showNotifications && (
+            <NotificationsPanel
+              isOpen={showNotifications}
+              onClose={() => setShowNotifications(false)}
+            />
+          )}
+
+          {showResumeManager && (
+            <ResumeManager
+              isOpen={showResumeManager}
+              onClose={() => setShowResumeManager(false)}
+            />
+          )}
+
+          {showInterviewScheduler && (
+            <InterviewScheduler
+              isOpen={showInterviewScheduler}
+              onClose={() => setShowInterviewScheduler(false)}
+            />
+          )}
         </div>
       </div>
       </Layout>
