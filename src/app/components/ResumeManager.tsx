@@ -17,7 +17,7 @@ import {
   Calendar,
   File,
   FileType,
-  FileSize,
+  HardDrive,
   Copy,
   Share2,
   Settings,
