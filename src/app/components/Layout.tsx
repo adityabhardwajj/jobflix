@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import Navbar from "./Navbar";
+import { JobFlixLogoFooter } from './JobFlixLogo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -7,9 +9,12 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-background transition-colors duration-300">
+      {/* Navigation */}
+      <Navbar />
+      
       {/* Main Content */}
-      <main className="flex-grow bg-white dark:bg-gray-900 transition-colors duration-300">
+      <main className="flex-grow bg-background transition-colors duration-300">
         {children}
       </main>
 
@@ -18,7 +23,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-white">Jobflix</h3>
+              <JobFlixLogoFooter size="lg" showText={true} animated={true} className="text-white" />
               <p className="text-sm">Your all-in-one platform for tech jobs, news, and project ideas.</p>
             </div>
             <div>

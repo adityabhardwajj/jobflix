@@ -1,8 +1,20 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, FileText, User, Briefcase, Send, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { 
+  X, Upload, FileText, User, Briefcase, Send, CheckCircle, 
+  ArrowLeft, ArrowRight, Loader2, Plus, Trash2 
+} from 'lucide-react';
+import {
+  jobApplicationPersonalInfoSchema,
+  jobApplicationExperienceSchema,
+  jobApplicationDocumentsSchema,
+  jobApplicationQuestionsSchema,
+  type JobApplicationFormData
+} from '@/lib/validations';
 
 interface Job {
   id: number;
@@ -23,63 +35,52 @@ interface JobApplicationModalProps {
   job: Job | null;
 }
 
-interface ApplicationData {
-  personalInfo: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    location: string;
-  };
-  experience: {
-    yearsOfExperience: string;
-    currentRole: string;
-    currentCompany: string;
-    skills: string[];
-  };
-  documents: {
-    resume: File | null;
-    coverLetter: string;
-    portfolio: string;
-  };
-  questions: {
-    whyJoin: string;
-    salaryExpectation: string;
-    startDate: string;
-    remotePreference: string;
-  };
-}
+type ApplicationStep = 'personal' | 'experience' | 'documents' | 'questions';
 
-const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
-  isOpen,
-  onClose,
-  job
-}) => {
-  const [currentStep, setCurrentStep] = useState(1);
+export default function JobApplicationModal({ isOpen, onClose, job }: JobApplicationModalProps) {
+  const [currentStep, setCurrentStep] = useState<ApplicationStep>('personal');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [skillInput, setSkillInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [applicationData, setApplicationData] = useState<ApplicationData>({
-    personalInfo: {
+  // Personal Info Form
+  const personalForm = useForm({
+    resolver: zodResolver(jobApplicationPersonalInfoSchema),
+    defaultValues: {
       firstName: '',
       lastName: '',
       email: '',
       phone: '',
       location: '',
     },
-    experience: {
+  });
+
+  // Experience Form
+  const experienceForm = useForm({
+    resolver: zodResolver(jobApplicationExperienceSchema),
+    defaultValues: {
       yearsOfExperience: '',
       currentRole: '',
       currentCompany: '',
       skills: [],
     },
-    documents: {
-      resume: null,
+  });
+
+  // Documents Form
+  const documentsForm = useForm({
+    resolver: zodResolver(jobApplicationDocumentsSchema),
+    defaultValues: {
+      resume: undefined,
       coverLetter: '',
       portfolio: '',
     },
-    questions: {
+  });
+
+  // Questions Form
+  const questionsForm = useForm({
+    resolver: zodResolver(jobApplicationQuestionsSchema),
+    defaultValues: {
       whyJoin: '',
       salaryExpectation: '',
       startDate: '',
@@ -87,300 +88,480 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
     },
   });
 
+  if (!isOpen || !job) return null;
+
   const steps = [
-    { id: 1, title: 'Personal Info', icon: User },
-    { id: 2, title: 'Experience', icon: Briefcase },
-    { id: 3, title: 'Documents', icon: FileText },
-    { id: 4, title: 'Questions', icon: Send },
+    { id: 'personal', title: 'Personal Info', icon: User, form: personalForm },
+    { id: 'experience', title: 'Experience', icon: Briefcase, form: experienceForm },
+    { id: 'documents', title: 'Documents', icon: FileText, form: documentsForm },
+    { id: 'questions', title: 'Questions', icon: Send, form: questionsForm },
   ];
 
-  const handleInputChange = (section: keyof ApplicationData, field: string, value: any) => {
-    setApplicationData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value,
-      },
-    }));
+  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
+  const currentStepData = steps[currentStepIndex];
+
+  const handleNext = async () => {
+    const isValid = await currentStepData.form.trigger();
+    if (isValid) {
+      if (currentStepIndex < steps.length - 1) {
+        setCurrentStep(steps[currentStepIndex + 1].id as ApplicationStep);
+      }
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStep(steps[currentStepIndex - 1].id as ApplicationStep);
+    }
+  };
+
+  const handleSubmit = async () => {
+    // Validate all forms
+    const [personalValid, experienceValid, documentsValid, questionsValid] = await Promise.all([
+      personalForm.trigger(),
+      experienceForm.trigger(),
+      documentsForm.trigger(),
+      questionsForm.trigger(),
+    ]);
+
+    if (!personalValid || !experienceValid || !documentsValid || !questionsValid) {
+      // Go to first invalid step
+      if (!personalValid) setCurrentStep('personal');
+      else if (!experienceValid) setCurrentStep('experience');
+      else if (!documentsValid) setCurrentStep('documents');
+      else if (!questionsValid) setCurrentStep('questions');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Combine all form data
+      const applicationData: JobApplicationFormData = {
+        personalInfo: personalForm.getValues(),
+        experience: experienceForm.getValues(),
+        documents: documentsForm.getValues(),
+        questions: questionsForm.getValues(),
+      };
+
+      console.log('Submitting application:', applicationData);
+      
+      // TODO: Submit to API
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    setIsSubmitted(true);
+    
+    // Reset after showing success
+    setTimeout(() => {
+        handleClose();
+      }, 3000);
+    } catch (error) {
+      console.error('Application submission failed:', error);
+      // Handle error appropriately
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+      onClose();
+    setCurrentStep('personal');
+      setIsSubmitted(false);
+    setSkillInput('');
+    personalForm.reset();
+    experienceForm.reset();
+    documentsForm.reset();
+    questionsForm.reset();
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      handleInputChange('documents', 'resume', file);
+      documentsForm.setValue('resume', file);
     }
   };
 
-  const handleSkillAdd = (skill: string) => {
-    if (skill.trim() && !applicationData.experience.skills.includes(skill.trim())) {
-      handleInputChange('experience', 'skills', [...applicationData.experience.skills, skill.trim()]);
+  const addSkill = () => {
+    if (skillInput.trim()) {
+      const currentSkills = experienceForm.getValues('skills');
+      if (!currentSkills.includes(skillInput.trim())) {
+        experienceForm.setValue('skills', [...currentSkills, skillInput.trim()]);
+        setSkillInput('');
+      }
     }
   };
 
-  const handleSkillRemove = (skillToRemove: string) => {
-    handleInputChange('experience', 'skills', 
-      applicationData.experience.skills.filter(skill => skill !== skillToRemove)
+  const removeSkill = (skillToRemove: string) => {
+    const currentSkills = experienceForm.getValues('skills');
+    experienceForm.setValue('skills', currentSkills.filter(skill => skill !== skillToRemove));
+  };
+
+  if (isSubmitted) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 text-center"
+        >
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Application Submitted!
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Your application for {job.title} at {job.company} has been submitted successfully.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500">
+            You'll receive a confirmation email shortly.
+          </p>
+        </motion.div>
+      </div>
     );
-  };
+  }
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    
-    // Reset after showing success
-    setTimeout(() => {
-      onClose();
-      setCurrentStep(1);
-      setIsSubmitted(false);
-      setApplicationData({
-        personalInfo: { firstName: '', lastName: '', email: '', phone: '', location: '' },
-        experience: { yearsOfExperience: '', currentRole: '', currentCompany: '', skills: [] },
-        documents: { resume: null, coverLetter: '', portfolio: '' },
-        questions: { whyJoin: '', salaryExpectation: '', startDate: '', remotePreference: '' },
-      });
-    }, 3000);
-  };
-
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return applicationData.personalInfo.firstName && 
-               applicationData.personalInfo.lastName && 
-               applicationData.personalInfo.email;
-      case 2:
-        return applicationData.experience.yearsOfExperience && 
-               applicationData.experience.currentRole;
-      case 3:
-        return applicationData.documents.resume;
-      case 4:
-        return applicationData.questions.whyJoin && 
-               applicationData.questions.salaryExpectation;
-      default:
-        return false;
-    }
-  };
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
         return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Apply for {job.title}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">{job.company}</p>
+          </div>
+          <button
+            onClick={handleClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            aria-label="Close modal"
           >
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Personal Information</h3>
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
+
+        {/* Progress Steps */}
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = step.id === currentStep;
+              const isCompleted = index < currentStepIndex;
+              
+              return (
+                <div key={step.id} className="flex items-center">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
+                    isCompleted 
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : isActive
+                      ? 'bg-blue-500 border-blue-500 text-white'
+                      : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500'
+                  }`}>
+                    {isCompleted ? (
+                      <CheckCircle className="w-5 h-5" />
+                    ) : (
+                      <Icon className="w-5 h-5" />
+                    )}
+                  </div>
+                  <span className={`ml-2 text-sm font-medium ${
+                    isActive 
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : isCompleted
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                    {step.title}
+                  </span>
+                  {index < steps.length - 1 && (
+                    <div className={`w-8 h-0.5 mx-4 ${
+                      isCompleted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          <AnimatePresence mode="wait">
+            {currentStep === 'personal' && (
+              <motion.div
+                key="personal"
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Personal Information
+                </h3>
+                
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   First Name *
                 </label>
                 <input
-                  type="text"
-                  value={applicationData.personalInfo.firstName}
-                  onChange={(e) => handleInputChange('personalInfo', 'firstName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="Enter your first name"
-                />
+                      {...personalForm.register('firstName')}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        personalForm.formState.errors.firstName
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                      } text-gray-900 dark:text-white`}
+                      placeholder="John"
+                    />
+                    {personalForm.formState.errors.firstName && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {personalForm.formState.errors.firstName.message}
+                      </p>
+                    )}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Last Name *
                 </label>
                 <input
-                  type="text"
-                  value={applicationData.personalInfo.lastName}
-                  onChange={(e) => handleInputChange('personalInfo', 'lastName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="Enter your last name"
-                />
+                      {...personalForm.register('lastName')}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        personalForm.formState.errors.lastName
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                      } text-gray-900 dark:text-white`}
+                      placeholder="Doe"
+                    />
+                    {personalForm.formState.errors.lastName && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {personalForm.formState.errors.lastName.message}
+                      </p>
+                    )}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Email *
+                      Email Address *
                 </label>
                 <input
+                      {...personalForm.register('email')}
                   type="email"
-                  value={applicationData.personalInfo.email}
-                  onChange={(e) => handleInputChange('personalInfo', 'email', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="Enter your email"
-                />
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        personalForm.formState.errors.email
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                      } text-gray-900 dark:text-white`}
+                      placeholder="john@example.com"
+                    />
+                    {personalForm.formState.errors.email && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {personalForm.formState.errors.email.message}
+                      </p>
+                    )}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Phone Number
+                      Phone Number *
                 </label>
                 <input
+                      {...personalForm.register('phone')}
                   type="tel"
-                  value={applicationData.personalInfo.phone}
-                  onChange={(e) => handleInputChange('personalInfo', 'phone', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="Enter your phone number"
-                />
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        personalForm.formState.errors.phone
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                      } text-gray-900 dark:text-white`}
+                      placeholder="+1234567890"
+                    />
+                    {personalForm.formState.errors.phone && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {personalForm.formState.errors.phone.message}
+                      </p>
+                    )}
+                  </div>
               </div>
-              <div className="md:col-span-2">
+
+                <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Location
+                    Location *
                 </label>
                 <input
-                  type="text"
-                  value={applicationData.personalInfo.location}
-                  onChange={(e) => handleInputChange('personalInfo', 'location', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="Enter your location"
-                />
-              </div>
+                    {...personalForm.register('location')}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      personalForm.formState.errors.location
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                    } text-gray-900 dark:text-white`}
+                    placeholder="San Francisco, CA"
+                  />
+                  {personalForm.formState.errors.location && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {personalForm.formState.errors.location.message}
+                    </p>
+                  )}
             </div>
           </motion.div>
-        );
+            )}
 
-      case 2:
-        return (
+            {currentStep === 'experience' && (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
-          >
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Professional Experience</h3>
-            <div className="space-y-4">
+                key="experience"
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Professional Experience
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Years of Experience *
                 </label>
                 <select
-                  value={applicationData.experience.yearsOfExperience}
-                  onChange={(e) => handleInputChange('experience', 'yearsOfExperience', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                >
-                  <option value="">Select experience level</option>
+                      {...experienceForm.register('yearsOfExperience')}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        experienceForm.formState.errors.yearsOfExperience
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                      } text-gray-900 dark:text-white`}
+                    >
+                      <option value="">Select experience</option>
                   <option value="0-1">0-1 years</option>
                   <option value="1-3">1-3 years</option>
                   <option value="3-5">3-5 years</option>
-                  <option value="5-8">5-8 years</option>
-                  <option value="8+">8+ years</option>
+                      <option value="5-10">5-10 years</option>
+                      <option value="10+">10+ years</option>
                 </select>
+                    {experienceForm.formState.errors.yearsOfExperience && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {experienceForm.formState.errors.yearsOfExperience.message}
+                      </p>
+                    )}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Current Role *
                 </label>
                 <input
-                  type="text"
-                  value={applicationData.experience.currentRole}
-                  onChange={(e) => handleInputChange('experience', 'currentRole', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="e.g., Senior Frontend Developer"
-                />
+                      {...experienceForm.register('currentRole')}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        experienceForm.formState.errors.currentRole
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                      } text-gray-900 dark:text-white`}
+                      placeholder="Senior Software Engineer"
+                    />
+                    {experienceForm.formState.errors.currentRole && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {experienceForm.formState.errors.currentRole.message}
+                      </p>
+                    )}
+                  </div>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Current Company
+                    Current Company *
                 </label>
                 <input
-                  type="text"
-                  value={applicationData.experience.currentCompany}
-                  onChange={(e) => handleInputChange('experience', 'currentCompany', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="e.g., Tech Corp Inc."
-                />
+                    {...experienceForm.register('currentCompany')}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      experienceForm.formState.errors.currentCompany
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                    } text-gray-900 dark:text-white`}
+                    placeholder="Tech Corp Inc."
+                  />
+                  {experienceForm.formState.errors.currentCompany && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {experienceForm.formState.errors.currentCompany.message}
+                    </p>
+                  )}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Key Skills
+                    Skills *
                 </label>
-                <div className="space-y-3">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mb-2">
                     <input
-                      type="text"
-                      placeholder="Add a skill (e.g., React, Python)"
-                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleSkillAdd(e.currentTarget.value);
-                          e.currentTarget.value = '';
-                        }
-                      }}
+                      value={skillInput}
+                      onChange={(e) => setSkillInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Add a skill"
                     />
                     <button
-                      onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        handleSkillAdd(input.value);
-                        input.value = '';
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      type="button"
+                      onClick={addSkill}
+                      className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                     >
-                      Add
+                      <Plus className="w-4 h-4" />
                     </button>
                   </div>
+                  
                   <div className="flex flex-wrap gap-2">
-                    {applicationData.experience.skills.map((skill, index) => (
+                    {experienceForm.watch('skills').map((skill) => (
                       <span
-                        key={index}
-                        className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm flex items-center gap-2"
+                        key={skill}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm"
                       >
                         {skill}
                         <button
-                          onClick={() => handleSkillRemove(skill)}
+                          type="button"
+                          onClick={() => removeSkill(skill)}
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
                         >
-                          ×
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </span>
                     ))}
                   </div>
-                </div>
-              </div>
+                  
+                  {experienceForm.formState.errors.skills && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {experienceForm.formState.errors.skills.message}
+                    </p>
+                  )}
             </div>
           </motion.div>
-        );
+            )}
 
-      case 3:
-        return (
+            {currentStep === 'documents' && (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
-          >
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Documents & Portfolio</h3>
-            <div className="space-y-4">
+                key="documents"
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Documents & Portfolio
+                </h3>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Resume/CV *
+                    Resume * (PDF or Word, max 5MB)
                 </label>
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
-                >
-                  <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  {applicationData.documents.resume ? (
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Selected: {applicationData.documents.resume.name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        Click to change file
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Click to upload your resume
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        PDF, DOC, or DOCX (max 5MB)
-                      </p>
-                    </div>
-                  )}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                      documentsForm.formState.errors.resume
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400'
+                    }`}
+                  >
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {documentsForm.watch('resume')?.name || 'Click to upload your resume'}
+                    </p>
                 </div>
                 <input
                   ref={fileInputRef}
@@ -389,215 +570,177 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
                   onChange={handleFileUpload}
                   className="hidden"
                 />
+                  {documentsForm.formState.errors.resume && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {documentsForm.formState.errors.resume.message}
+                    </p>
+                  )}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Cover Letter
+                    Cover Letter (Optional)
                 </label>
                 <textarea
-                  value={applicationData.documents.coverLetter}
-                  onChange={(e) => handleInputChange('documents', 'coverLetter', e.target.value)}
+                    {...documentsForm.register('coverLetter')}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      documentsForm.formState.errors.coverLetter
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                    } text-gray-900 dark:text-white`}
                   placeholder="Tell us why you're interested in this position..."
                 />
+                  {documentsForm.formState.errors.coverLetter && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {documentsForm.formState.errors.coverLetter.message}
+                    </p>
+                  )}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Portfolio URL
+                    Portfolio URL (Optional)
                 </label>
                 <input
+                    {...documentsForm.register('portfolio')}
                   type="url"
-                  value={applicationData.documents.portfolio}
-                  onChange={(e) => handleInputChange('documents', 'portfolio', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="https://your-portfolio.com"
-                />
-              </div>
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      documentsForm.formState.errors.portfolio
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                    } text-gray-900 dark:text-white`}
+                    placeholder="https://yourportfolio.com"
+                  />
+                  {documentsForm.formState.errors.portfolio && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {documentsForm.formState.errors.portfolio.message}
+                    </p>
+                  )}
             </div>
           </motion.div>
-        );
+            )}
 
-      case 4:
-        return (
+            {currentStep === 'questions' && (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
-          >
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Additional Questions</h3>
-            <div className="space-y-4">
+                key="questions"
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Additional Questions
+                </h3>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Why do you want to join {job?.company}? *
+                    Why do you want to join {job.company}? *
                 </label>
                 <textarea
-                  value={applicationData.questions.whyJoin}
-                  onChange={(e) => handleInputChange('questions', 'whyJoin', e.target.value)}
+                    {...questionsForm.register('whyJoin')}
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="Share your motivation for joining our team..."
-                />
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      questionsForm.formState.errors.whyJoin
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                    } text-gray-900 dark:text-white`}
+                    placeholder="Tell us what excites you about this opportunity..."
+                  />
+                  {questionsForm.formState.errors.whyJoin && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {questionsForm.formState.errors.whyJoin.message}
+                    </p>
+                  )}
               </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Salary Expectation *
                 </label>
                 <input
-                  type="text"
-                  value={applicationData.questions.salaryExpectation}
-                  onChange={(e) => handleInputChange('questions', 'salaryExpectation', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="e.g., $80,000 - $100,000"
-                />
+                      {...questionsForm.register('salaryExpectation')}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        questionsForm.formState.errors.salaryExpectation
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                      } text-gray-900 dark:text-white`}
+                      placeholder="$120,000 - $150,000"
+                    />
+                    {questionsForm.formState.errors.salaryExpectation && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {questionsForm.formState.errors.salaryExpectation.message}
+                      </p>
+                    )}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Expected Start Date
+                      Available Start Date *
                 </label>
                 <input
+                      {...questionsForm.register('startDate')}
                   type="date"
-                  value={applicationData.questions.startDate}
-                  onChange={(e) => handleInputChange('questions', 'startDate', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        questionsForm.formState.errors.startDate
+                          ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                      } text-gray-900 dark:text-white`}
+                    />
+                    {questionsForm.formState.errors.startDate && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {questionsForm.formState.errors.startDate.message}
+                      </p>
+                    )}
+                  </div>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Remote Work Preference
+                    Remote Work Preference *
                 </label>
                 <select
-                  value={applicationData.questions.remotePreference}
-                  onChange={(e) => handleInputChange('questions', 'remotePreference', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    {...questionsForm.register('remotePreference')}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      questionsForm.formState.errors.remotePreference
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                    } text-gray-900 dark:text-white`}
                 >
                   <option value="">Select preference</option>
                   <option value="remote">Fully Remote</option>
-                  <option value="hybrid">Hybrid</option>
+                    <option value="hybrid">Hybrid (2-3 days in office)</option>
                   <option value="onsite">On-site</option>
+                    <option value="flexible">Flexible</option>
                 </select>
-              </div>
-            </div>
-          </motion.div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  if (!isOpen || !job) return null;
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Apply for {job.title}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">{job.company}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6 text-gray-500 dark:text-gray-400" />
-            </button>
-          </div>
-
-          {/* Progress Steps */}
-          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-            <div className="flex items-center justify-between">
-              {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center">
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                    currentStep >= step.id
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400'
-                  }`}>
-                    {currentStep > step.id ? (
-                      <CheckCircle className="w-5 h-5" />
-                    ) : (
-                      <step.icon className="w-5 h-5" />
-                    )}
-                  </div>
-                  <span className={`ml-2 text-sm font-medium ${
-                    currentStep >= step.id
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`}>
-                    {step.title}
-                  </span>
-                  {index < steps.length - 1 && (
-                    <div className={`w-16 h-0.5 mx-4 ${
-                      currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-                    }`} />
+                  {questionsForm.formState.errors.remotePreference && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {questionsForm.formState.errors.remotePreference.message}
+                    </p>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[60vh]">
-            {isSubmitted ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-12"
-              >
-                <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Application Submitted!
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Thank you for applying to {job.title} at {job.company}. We'll review your application and get back to you soon.
-                </p>
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                  <p className="text-sm text-green-800 dark:text-green-200">
-                    Application ID: #{(Math.random() * 1000000).toFixed(0)}
-                  </p>
-                </div>
               </motion.div>
-            ) : (
-              renderStep()
             )}
+          </AnimatePresence>
           </div>
 
           {/* Footer */}
-          {!isSubmitted && (
             <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">
               <button
-                onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-                disabled={currentStep === 1}
-                className="flex items-center px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={handlePrevious}
+            disabled={currentStepIndex === 0}
+            className="flex items-center px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Previous
               </button>
               
-              <div className="flex gap-3">
-                {currentStep < steps.length ? (
+          <div className="flex items-center space-x-2">
+            {currentStepIndex < steps.length - 1 ? (
                   <button
-                    onClick={() => setCurrentStep(currentStep + 1)}
-                    disabled={!canProceed()}
-                    className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={handleNext}
+                className="flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                   >
                     Next
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -605,29 +748,25 @@ const JobApplicationModal: React.FC<JobApplicationModalProps> = ({
                 ) : (
                   <button
                     onClick={handleSubmit}
-                    disabled={!canProceed() || isSubmitting}
-                    className="flex items-center px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                disabled={isSubmitting}
+                className="flex items-center px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors"
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Submitting...
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4 mr-2" />
                         Submit Application
+                    <Send className="w-4 h-4 ml-2" />
                       </>
                     )}
                   </button>
                 )}
               </div>
             </div>
-          )}
-        </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </div>
   );
-};
-
-export default JobApplicationModal; 
+}

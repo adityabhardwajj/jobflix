@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { JobFlixLogoHeader } from './JobFlixLogo';
 import ThemeToggle from "./ThemeToggle";
 
 export default function PersistentHeader() {
@@ -16,13 +17,18 @@ export default function PersistentHeader() {
   // Memoized scroll handler to prevent unnecessary re-renders
   const handleScroll = useCallback(() => {
     const scrollY = window.scrollY;
-    setIsScrolled(scrollY > 20);
+    const shouldBeScrolled = scrollY > 20;
+
+    // Only update state if it actually changed to prevent unnecessary re-renders
+    setIsScrolled((prev) =>
+      prev !== shouldBeScrolled ? shouldBeScrolled : prev
+    );
   }, []);
 
   // Throttled scroll handler for better performance
   useEffect(() => {
     let ticking = false;
-    
+
     const throttledScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
@@ -32,7 +38,10 @@ export default function PersistentHeader() {
         ticking = true;
       }
     };
-    
+
+    // Set initial scroll state
+    handleScroll();
+
     window.addEventListener("scroll", throttledScroll, { passive: true });
     return () => window.removeEventListener("scroll", throttledScroll);
   }, [handleScroll]);
@@ -40,20 +49,37 @@ export default function PersistentHeader() {
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (loginDropdownRef.current && !loginDropdownRef.current.contains(event.target as Node)) {
+      if (
+        loginDropdownRef.current &&
+        !loginDropdownRef.current.contains(event.target as Node)
+      ) {
         setIsLoginDropdownOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  // Close mobile menu on route change
+  // Close mobile menu on route change and reset scroll state
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setIsLoginDropdownOpen(false);
+
+    // Reset scroll state to prevent glitches during route changes
+    const resetScrollState = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    // Immediate reset
+    resetScrollState();
+
+    // Delayed reset to ensure smooth transition
+    const timer = setTimeout(resetScrollState, 100);
+
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   const handleLoginClick = () => {
@@ -61,11 +87,11 @@ export default function PersistentHeader() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+    window.location.href = "/api/auth/google";
   };
 
   const handlePhoneLogin = () => {
-    window.location.href = '/auth/phone-login';
+    window.location.href = "/auth/phone-login";
   };
 
   const isActiveRoute = (href: string) => {
@@ -77,23 +103,17 @@ export default function PersistentHeader() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-gray-700/50' 
-          : 'bg-transparent'
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-200 ${
+        isScrolled
+          ? "bg-white/98 dark:bg-gray-900/98 backdrop-blur-lg shadow-xl border-b border-gray-200 dark:border-gray-700"
+          : "bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200/30 dark:border-gray-700/30"
       }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 lg:h-18">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
-            <motion.span 
-              className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-indigo-500 to-pink-500 bg-clip-text text-transparent"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
-            >
-              Jobflix
-            </motion.span>
+            <JobFlixLogoHeader size="lg" showText={true} animated={true} />
           </Link>
 
           {/* Desktop Navigation */}
@@ -103,21 +123,25 @@ export default function PersistentHeader() {
               { href: "/tech-news", label: "Tech News" },
               { href: "/project-ideas", label: "Project Ideas" },
               { href: "/assistant", label: "Assistant" },
-              { href: "/dashboard", label: "Dashboard" }
+              { href: "/dashboard", label: "Dashboard" },
             ].map((item) => (
-              <Link 
+              <Link
                 key={item.href}
-                href={item.href} 
+                href={item.href}
                 className={`nav-link group relative dark:text-gray-300 dark:hover:text-white transition-colors duration-200 ${
-                  isActiveRoute(item.href) 
-                    ? 'text-blue-600 dark:text-blue-400 font-medium' 
-                    : 'text-gray-700 dark:text-gray-300'
+                  isActiveRoute(item.href)
+                    ? "text-blue-600 dark:text-blue-400 font-medium"
+                    : "text-gray-700 dark:text-gray-300"
                 }`}
               >
                 {item.label}
-                <span className={`absolute -bottom-1 left-0 h-0.5 bg-blue-500 transition-all duration-300 ${
-                  isActiveRoute(item.href) ? 'w-full' : 'w-0 group-hover:w-full'
-                }`}></span>
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 bg-blue-500 transition-all duration-300 ${
+                    isActiveRoute(item.href)
+                      ? "w-full"
+                      : "w-0 group-hover:w-full"
+                  }`}
+                ></span>
               </Link>
             ))}
           </nav>
@@ -125,7 +149,7 @@ export default function PersistentHeader() {
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center space-x-4">
             <ThemeToggle />
-            
+
             {/* Login Dropdown */}
             <div className="relative" ref={loginDropdownRef}>
               <motion.button
@@ -155,7 +179,9 @@ export default function PersistentHeader() {
                         className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700 transition-all duration-150 flex items-center space-x-3"
                       >
                         <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">G</span>
+                          <span className="text-white text-xs font-bold">
+                            G
+                          </span>
                         </div>
                         <span>Login with Google</span>
                       </motion.button>
@@ -176,11 +202,11 @@ export default function PersistentHeader() {
               </AnimatePresence>
             </div>
 
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Link href="/signup" className="btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Link
+                href="/signup"
+                className="btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700"
+              >
                 Sign up
               </Link>
             </motion.div>
@@ -196,7 +222,11 @@ export default function PersistentHeader() {
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-menu"
           >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </motion.button>
         </div>
       </div>
@@ -219,22 +249,26 @@ export default function PersistentHeader() {
                 {[
                   { href: "/jobs", label: "Jobs", icon: "💼" },
                   { href: "/tech-news", label: "Tech News", icon: "📰" },
-                  { href: "/project-ideas", label: "Project Ideas", icon: "💡" },
+                  {
+                    href: "/project-ideas",
+                    label: "Project Ideas",
+                    icon: "💡",
+                  },
                   { href: "/assistant", label: "Assistant", icon: "🤖" },
-                  { href: "/dashboard", label: "Dashboard", icon: "📊" }
+                  { href: "/dashboard", label: "Dashboard", icon: "📊" },
                 ].map((item) => (
                   <motion.div
                     key={item.href}
                     whileHover={{ x: 5 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Link 
-                      href={item.href} 
-                      onClick={() => setIsMobileMenuOpen(false)} 
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                         isActiveRoute(item.href)
-                          ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white'
+                          ? "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                       }`}
                     >
                       <span className="text-lg">{item.icon}</span>
@@ -243,12 +277,12 @@ export default function PersistentHeader() {
                   </motion.div>
                 ))}
               </nav>
-              
+
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-4">
                   <ThemeToggle />
                 </div>
-                
+
                 <div className="space-y-3">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -282,9 +316,9 @@ export default function PersistentHeader() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Link 
-                      href="/signup" 
-                      onClick={() => setIsMobileMenuOpen(false)} 
+                    <Link
+                      href="/signup"
+                      onClick={() => setIsMobileMenuOpen(false)}
                       className="w-full btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 text-center"
                     >
                       Sign up
@@ -298,4 +332,4 @@ export default function PersistentHeader() {
       </AnimatePresence>
     </motion.header>
   );
-} 
+}

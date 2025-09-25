@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ClientThemeProvider } from "./components/ClientThemeProvider";
-import { ThemeContextProvider } from "./contexts/ThemeContext";
-import { ThemeScript } from "./components/ThemeScript";
-import PersistentHeader from "./components/PersistentHeader";
+import { HeroUIProvider } from "./providers/HeroUIProvider";
+import { SessionProvider } from "./providers/SessionProvider";
 import { ToastProvider } from "./components/Toast";
-// import Navbar from "./components/Navbar";
+import SharedLayout from "./components/SharedLayout";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -15,8 +13,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Jobflix - Find Your Next Tech Job",
-  description: "Connect with tech recruiters and find your dream job",
+  title: "JobFlix - Your Career, Your Next Step",
+  description: "A precise way to find verified roles and connect with decision-makers.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' }
+    ],
+    apple: { url: '/favicon.svg', type: 'image/svg+xml' }
+  }
 };
 
 export default function RootLayout({
@@ -25,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} jobflix-light`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -36,29 +41,28 @@ export default function RootLayout({
                   var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                   
                   if (theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) {
-                    document.documentElement.classList.add('dark');
+                    document.documentElement.className = 'jobflix-dark';
                   } else {
-                    document.documentElement.classList.remove('dark');
+                    document.documentElement.className = 'jobflix-light';
                   }
-                } catch (e) {}
+                } catch (e) {
+                  document.documentElement.className = 'jobflix-light';
+                }
               })();
             `,
           }}
         />
       </head>
-      <body className="antialiased min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
-        <ClientThemeProvider>
-          <ThemeContextProvider>
-            <ThemeScript />
-            <PersistentHeader />
+      <body className="antialiased min-h-screen font-sans">
+        <SessionProvider>
+          <HeroUIProvider>
             <ToastProvider>
-              <div className="min-h-full pt-16 lg:pt-18">
-                {/* <Navbar /> */}
-                <main>{children}</main>
-              </div>
+              <SharedLayout>
+                {children}
+              </SharedLayout>
             </ToastProvider>
-          </ThemeContextProvider>
-        </ClientThemeProvider>
+          </HeroUIProvider>
+        </SessionProvider>
       </body>
     </html>
   );
