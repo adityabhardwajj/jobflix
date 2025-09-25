@@ -96,7 +96,7 @@ jobs:
           NEXTAUTH_URL: ${{ env.NEXTAUTH_URL }}
           
       - name: 📦 Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-files
           path: .next/
@@ -139,7 +139,7 @@ jobs:
           NEXTAUTH_URL: ${{ env.NEXTAUTH_URL }}
           
       - name: 📊 Upload Playwright report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
