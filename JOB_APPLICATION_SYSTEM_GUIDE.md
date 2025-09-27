@@ -7,12 +7,14 @@ This guide covers the complete implementation of the JobFlix job application sys
 ## 🏗️ Architecture
 
 ### Frontend Components
+
 - **ApplyDrawer**: Multi-step application form with progress tracking
 - **StatusTimeline**: Visual status tracking with icons and timestamps
 - **JobDetail**: Enhanced job page with application integration
 - **Application Pages**: Listing and detail views with filtering
 
 ### Backend Integration
+
 - **API Routes**: Complete CRUD operations for applications
 - **Draft System**: Auto-save functionality for incomplete applications
 - **File Upload**: Resume upload with validation
@@ -21,6 +23,7 @@ This guide covers the complete implementation of the JobFlix job application sys
 ## 📦 Dependencies
 
 The following dependencies are already included in the project:
+
 - `@tanstack/react-query` - Data fetching and caching
 - `date-fns` - Date formatting and manipulation
 - `lucide-react` - Icons for UI components
@@ -71,23 +74,27 @@ export function useExistingApplication(jobId: string) {
 The `ApplyDrawer` component implements a 4-step application process:
 
 #### Step 1: Resume Upload
+
 - File upload with validation (PDF, DOC, DOCX)
 - 10MB size limit
 - Existing resume selection
 - Real-time upload progress
 
 #### Step 2: Cover Letter
+
 - Optional textarea for personalized cover letter
 - Character count display
 - Auto-save functionality
 
 #### Step 3: Screening Questions
+
 - Dynamic form based on job requirements
 - Support for text, multiple choice, and yes/no questions
 - Required field validation
 - Answer persistence
 
 #### Step 4: Review & Submit
+
 - Complete application preview
 - Validation summary
 - Submit button with loading states
@@ -141,18 +148,21 @@ const statusConfig = {
 ## 🎨 UI/UX Features
 
 ### Progress Tracking
+
 - Step-by-step progress indicator
 - Required field validation
 - Disabled submit until requirements met
 - Visual feedback for each step
 
 ### Success Experience
+
 - Confetti animation on successful submission
 - Success page with application details
 - Status timeline with visual progress
 - Action buttons for next steps
 
 ### Error Handling
+
 - Comprehensive error states
 - Retry mechanisms
 - User-friendly error messages
@@ -161,11 +171,13 @@ const statusConfig = {
 ## 🧪 Testing Coverage
 
 ### Unit Tests
+
 - **useApplications.test.ts**: Hook functionality testing
 - **ApplyDrawer.test.tsx**: Component behavior testing
 - **StatusTimeline.test.tsx**: Status display testing
 
 ### Test Scenarios
+
 1. **Happy Path**: Complete application flow
 2. **Duplicate Guard**: Prevent duplicate applications
 3. **Auto-Save**: Draft persistence and recovery
@@ -175,7 +187,8 @@ const statusConfig = {
 ## 🚀 API Endpoints
 
 ### Application Management
-```
+
+```bash
 GET    /api/applications/                    # List applications
 POST   /api/applications/                     # Create application
 GET    /api/applications/[id]                 # Get application details
@@ -184,19 +197,22 @@ DELETE /api/applications/[id]                 # Delete application
 ```
 
 ### Draft System
-```
+
+```bash
 POST   /api/applications/draft                # Create draft
 GET    /api/applications/draft/[id]          # Get draft
 PUT    /api/applications/draft/[id]          # Update draft
 ```
 
 ### File Upload
-```
+
+```bash
 POST   /api/applications/upload-resume        # Upload resume
 ```
 
 ### Screening & Submission
-```
+
+```bash
 POST   /api/applications/screening-answers    # Save answers
 POST   /api/applications/submit               # Submit application
 ```
@@ -204,10 +220,12 @@ POST   /api/applications/submit               # Submit application
 ## 📱 Pages & Routes
 
 ### Application Pages
+
 - `/applications` - Application listing with filters
 - `/applications/[id]` - Application detail with status timeline
 
 ### Integration Points
+
 - Job detail pages with "Apply" button
 - ApplyDrawer integration
 - Status tracking and notifications
@@ -215,11 +233,13 @@ POST   /api/applications/submit               # Submit application
 ## 🔄 Real-time Features
 
 ### Status Updates
+
 - WebSocket integration for live status updates
 - Notification system for status changes
 - Timeline updates without page refresh
 
 ### Auto-Save
+
 - Debounced saving every 2 seconds
 - Draft recovery on page reload
 - Conflict resolution for concurrent edits
@@ -227,23 +247,27 @@ POST   /api/applications/submit               # Submit application
 ## 🎯 User Experience Flow
 
 ### 1. Job Discovery
+
 - Browse jobs on `/jobs` page
 - View job details with enhanced information
 - See application status if already applied
 
 ### 2. Application Process
+
 - Click "Apply" button on job detail page
 - Multi-step form with progress tracking
 - Auto-save prevents data loss
 - Validation ensures completeness
 
 ### 3. Submission Success
+
 - Confetti animation celebration
 - Redirect to application detail page
 - Status timeline shows progress
 - Next steps and actions provided
 
 ### 4. Status Tracking
+
 - Real-time status updates
 - Visual timeline with icons
 - Email notifications for changes
@@ -252,18 +276,21 @@ POST   /api/applications/submit               # Submit application
 ## 🔐 Security Considerations
 
 ### File Upload Security
+
 - File type validation (PDF, DOC, DOCX only)
 - Size limits (10MB maximum)
 - Virus scanning integration
 - Secure file storage
 
 ### Data Validation
+
 - Server-side validation for all inputs
 - XSS protection for text fields
 - CSRF protection for form submissions
 - Rate limiting for API endpoints
 
 ### Access Control
+
 - User authentication required
 - Application ownership verification
 - Secure file access controls
@@ -272,18 +299,21 @@ POST   /api/applications/submit               # Submit application
 ## 📊 Performance Optimizations
 
 ### Caching Strategy
+
 - React Query for client-side caching
 - Stale-while-revalidate for data freshness
 - Optimistic updates for better UX
 - Background refetching for real-time updates
 
 ### Bundle Optimization
+
 - Code splitting for application components
 - Lazy loading for heavy features
 - Image optimization for company logos
 - Tree shaking for unused code
 
 ### Database Optimization
+
 - Indexed queries for application lookups
 - Pagination for large result sets
 - Efficient status update queries
@@ -292,18 +322,21 @@ POST   /api/applications/submit               # Submit application
 ## 🚀 Deployment Checklist
 
 ### Frontend Deployment
+
 - [ ] Build optimization enabled
 - [ ] Environment variables configured
 - [ ] CDN setup for static assets
 - [ ] Error monitoring configured
 
-### Backend Integration
+### Backend Deployment
+
 - [ ] API endpoints deployed
 - [ ] Database migrations applied
 - [ ] File storage configured
 - [ ] WebSocket server running
 
 ### Testing & Monitoring
+
 - [ ] Unit tests passing
 - [ ] Integration tests configured
 - [ ] Performance monitoring setup
@@ -314,16 +347,19 @@ POST   /api/applications/submit               # Submit application
 ### Common Issues
 
 1. **Auto-save not working**
+
    - Check network connectivity
    - Verify API endpoint availability
    - Check browser console for errors
 
 2. **File upload failures**
+
    - Verify file type and size
    - Check server storage configuration
    - Ensure proper authentication
 
 3. **Status updates not showing**
+
    - Verify WebSocket connection
    - Check notification permissions
    - Refresh application data

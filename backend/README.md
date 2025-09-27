@@ -1,10 +1,11 @@
- # JobFlix FastAPI Backend
+# JobFlix FastAPI Backend
 
 A comprehensive, high-performance backend API for the JobFlix job platform, built with FastAPI, SQLAlchemy, and PostgreSQL.
 
 ## 🚀 Features
 
 ### Core Features
+
 - **User Management** - Complete user registration, authentication, and profile management
 - **Job Management** - Full CRUD operations for job postings with advanced filtering
 - **Company Management** - Company profiles and employee management
@@ -16,6 +17,7 @@ A comprehensive, high-performance backend API for the JobFlix job platform, buil
 - **Email Integration** - Automated email notifications
 
 ### Technical Features
+
 - **Async/Await** - Full async support for high performance
 - **JWT Authentication** - Secure token-based authentication
 - **Database Migrations** - Alembic for database schema management
@@ -73,6 +75,7 @@ nano .env
 ```
 
 Required environment variables:
+
 ```env
 DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/jobflix
 JWT_SECRET_KEY=your-super-secret-jwt-key
@@ -100,9 +103,10 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 The API will be available at:
-- **API**: http://localhost:8000
-- **Documentation**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+
+- **API**: <http://localhost:8000>
+- **Documentation**: <http://localhost:8000/docs>
+- **ReDoc**: <http://localhost:8000/redoc>
 
 ## 📚 API Documentation
 
@@ -277,6 +281,7 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For support and questions:
+
 - Create an issue in the repository
 - Check the API documentation at `/docs`
 - Review the code examples in the endpoints

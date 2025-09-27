@@ -76,18 +76,21 @@ The card system uses semantic color tokens that automatically adapt to light/dar
 ### Card Variants
 
 **Primary Cards** (Jobs):
+
 ```tsx
 // Soft dark background with subtle border
 bg-card/95 dark:bg-card/90 border-border/50
 ```
 
 **Glass Cards** (News, Projects):
+
 ```tsx
 // Semi-transparent with backdrop blur
 bg-card/90 dark:bg-white/[0.03] border-white/[0.08]
 ```
 
 **Special Cards** (AI Assistant):
+
 ```tsx
 // Gradient background with accent borders
 bg-gradient-to-br from-accent/10 to-primary/10 border-accent/20
@@ -270,11 +273,13 @@ const jobCards = filterCardsByType(jobFlixCardsData, 'job');
 ### Adding New Card Types
 
 1. Update the `CardType` union:
+
 ```tsx
 export type CardType = 'job' | 'news' | 'project' | 'idea' | 'assistant' | 'event';
 ```
 
-2. Add styles in `cardHelpers.ts`:
+1. Add styles in `cardHelpers.ts`:
+
 ```tsx
 export const getCardTypeStyles = (type: CardType) => {
   const styles = {
