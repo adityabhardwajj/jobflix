@@ -30,8 +30,7 @@ export default function MinimalHero() {
             transition={{ duration: 0.8, delay: 0.1 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-fg mb-6"
           >
-            Your Career Platform for{' '}
-            <span className="text-accent">Modern Professionals</span>
+            The Marketplace of Ideas and Talent
           </motion.h1>
 
           {/* Subtitle */}
