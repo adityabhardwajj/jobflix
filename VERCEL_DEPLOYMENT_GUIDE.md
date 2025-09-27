@@ -5,6 +5,7 @@ This guide will help you deploy your JobFlix application to Vercel successfully.
 ## 🚀 Quick Deployment Steps
 
 ### 1. Prerequisites
+
 - GitHub repository: `https://github.com/adityabhardwajj/jobflix.git`
 - Vercel account (free tier available)
 - Database (PostgreSQL recommended)
@@ -13,7 +14,8 @@ This guide will help you deploy your JobFlix application to Vercel successfully.
 
 Before deploying, you need to set up the following environment variables in Vercel:
 
-#### Required Environment Variables:
+#### Required Environment Variables
+
 ```bash
 # Database
 DATABASE_URL="postgresql://username:password@host:port/database?schema=public"
@@ -40,18 +42,21 @@ APP_URL="https://your-app.vercel.app"
 ### 3. Database Setup
 
 #### Option A: Vercel Postgres (Recommended)
+
 1. Go to your Vercel dashboard
 2. Navigate to Storage → Create Database → Postgres
 3. Copy the connection string to `DATABASE_URL`
 
 #### Option B: External Database
-- **Neon**: https://neon.tech (Free tier available)
-- **Supabase**: https://supabase.com (Free tier available)
-- **Railway**: https://railway.app (Free tier available)
+
+- **Neon**: <https://neon.tech> (Free tier available)
+- **Supabase**: <https://supabase.com> (Free tier available)
+- **Railway**: <https://railway.app> (Free tier available)
 
 ### 4. Deploy to Vercel
 
 #### Method 1: Vercel CLI
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -70,7 +75,8 @@ vercel env add NEXTAUTH_URL
 ```
 
 #### Method 2: Vercel Dashboard
-1. Go to https://vercel.com
+
+1. Go to <https://vercel.com>
 2. Click "New Project"
 3. Import from GitHub: `adityabhardwajj/jobflix`
 4. Configure environment variables
@@ -79,6 +85,7 @@ vercel env add NEXTAUTH_URL
 ### 5. Post-Deployment Setup
 
 #### Database Migration
+
 After deployment, run database migrations:
 
 ```bash
@@ -88,8 +95,10 @@ npx prisma migrate deploy
 npx prisma generate
 ```
 
-#### Or use Vercel's Post-Deploy Hook:
+#### Or use Vercel's Post-Deploy Hook
+
 Create a script in `package.json`:
+
 ```json
 {
   "scripts": {
@@ -101,6 +110,7 @@ Create a script in `package.json`:
 ## 🔧 Configuration Files
 
 ### vercel.json
+
 ```json
 {
   "buildCommand": "npm run build",
@@ -118,7 +128,8 @@ Create a script in `package.json`:
 ```
 
 ### .vercelignore
-```
+
+```text
 node_modules/
 .next/
 out/
@@ -131,36 +142,46 @@ uploads/
 ## 🐛 Common Issues & Solutions
 
 ### Issue 1: Build Failures
+
 **Problem**: Build fails during deployment
-**Solution**: 
+**Solution**:
+
 - Check if all dependencies are in `package.json`
 - Ensure TypeScript errors are resolved
 - Verify all imports are correct
 
 ### Issue 2: Database Connection
+
 **Problem**: Database connection errors
 **Solution**:
+
 - Verify `DATABASE_URL` is correct
 - Check if database allows external connections
 - Ensure SSL is enabled for production
 
 ### Issue 3: Environment Variables
+
 **Problem**: Environment variables not loading
 **Solution**:
+
 - Add variables in Vercel dashboard
 - Redeploy after adding variables
 - Check variable names match exactly
 
 ### Issue 4: API Routes Not Working
+
 **Problem**: API endpoints returning 404
 **Solution**:
+
 - Check file structure in `src/app/api/`
 - Verify route handlers are exported correctly
 - Check Vercel function configuration
 
 ### Issue 5: Static Generation Issues
+
 **Problem**: Pages failing to generate
 **Solution**:
+
 - Check for server-side code in static pages
 - Add `export const dynamic = 'force-dynamic'` to dynamic pages
 - Verify all imports are available at build time
@@ -168,6 +189,7 @@ uploads/
 ## 📊 Performance Optimization
 
 ### 1. Image Optimization
+
 ```typescript
 // next.config.js
 const nextConfig = {
@@ -179,11 +201,13 @@ const nextConfig = {
 ```
 
 ### 2. Bundle Optimization
+
 - Use dynamic imports for heavy components
 - Implement code splitting
 - Optimize images and assets
 
 ### 3. Caching
+
 - Configure appropriate cache headers
 - Use Vercel's edge caching
 - Implement ISR for static content
@@ -191,11 +215,13 @@ const nextConfig = {
 ## 🔍 Monitoring & Debugging
 
 ### 1. Vercel Analytics
+
 - Enable Vercel Analytics in dashboard
 - Monitor performance metrics
 - Track user interactions
 
 ### 2. Logs
+
 ```bash
 # View deployment logs
 vercel logs
@@ -205,6 +231,7 @@ vercel logs --follow
 ```
 
 ### 3. Debug Mode
+
 ```bash
 # Enable debug mode
 vercel env add DEBUG "true"
@@ -213,12 +240,14 @@ vercel env add DEBUG "true"
 ## 🚀 Advanced Configuration
 
 ### Custom Domains
+
 1. Go to Vercel dashboard
 2. Navigate to Domains
 3. Add your custom domain
 4. Configure DNS settings
 
 ### Edge Functions
+
 ```typescript
 // For edge-optimized functions
 export const config = {
@@ -227,6 +256,7 @@ export const config = {
 ```
 
 ### Middleware
+
 ```typescript
 // middleware.ts
 import { NextResponse } from 'next/server'
@@ -252,24 +282,28 @@ export function middleware(request: NextRequest) {
 
 ## 🆘 Troubleshooting
 
-### Common Error Messages:
+### Common Error Messages
 
 1. **"Module not found"**
+
    - Check import paths
    - Verify file exists
    - Check case sensitivity
 
 2. **"Database connection failed"**
+
    - Verify DATABASE_URL
    - Check database permissions
    - Ensure SSL is enabled
 
 3. **"Environment variable not defined"**
+
    - Add variable in Vercel dashboard
    - Redeploy after adding
    - Check variable name spelling
 
 4. **"Build timeout"**
+
    - Optimize build process
    - Remove unnecessary dependencies
    - Use Vercel's build cache
@@ -277,12 +311,13 @@ export function middleware(request: NextRequest) {
 ## 📞 Support
 
 If you encounter issues:
+
 1. Check Vercel deployment logs
 2. Review this guide
 3. Check GitHub issues
 4. Contact Vercel support
 
-## 🎉 Success!
+## 🎉 Success
 
 Once deployed, your JobFlix application will be available at:
 `https://your-app.vercel.app`
