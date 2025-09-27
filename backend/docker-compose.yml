@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - uploads:/app/uploads
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql+asyncpg://jobflix_user:jobflix_pass@db:5432/jobflix
+      - DATABASE_URL_SYNC=postgresql://jobflix_user:jobflix_pass@db:5432/jobflix
+      - JWT_SECRET_KEY=dev-super-secret-jwt-key
+      - SECRET_KEY=dev-super-secret-key
+      - REDIS_URL=redis://redis:6379
+      - FRONTEND_URL=http://localhost:3006
+      - ALLOWED_HOSTS=["http://localhost:3006", "http://localhost:3000", "*"]
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=jobflix
+      - POSTGRES_USER=jobflix_user
+      - POSTGRES_PASSWORD=jobflix_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobflix_user -d jobflix"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Database Migrations (runs once)
+  migrations:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL_SYNC=postgresql://jobflix_user:jobflix_pass@db:5432/jobflix
+    depends_on:
+      - db
+    command: alembic upgrade head
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads:

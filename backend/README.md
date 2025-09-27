@@ -1,4 +1,4 @@
-# JobFlix FastAPI Backend
+ # JobFlix FastAPI Backend
 
 A comprehensive, high-performance backend API for the JobFlix job platform, built with FastAPI, SQLAlchemy, and PostgreSQL.
 

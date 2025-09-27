@@ -1,12 +1,9 @@
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/db"
-import bcrypt from "bcryptjs"
+import { apiClient } from "@/lib/api"
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -24,30 +21,26 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email
-            }
+          // Use FastAPI backend for authentication
+          const response = await apiClient.login({
+            email: credentials.email,
+            password: credentials.password
           })
 
-          if (!user || !user.password) {
+          if (response.error || !response.data) {
+            console.error("Login failed:", response.error)
             return null
           }
 
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          )
-
-          if (!isPasswordValid) {
-            return null
-          }
+          const { user, access_token, refresh_token } = response.data as any
 
           return {
             id: user.id,
             email: user.email,
-            name: user.name,
-            image: user.image,
+            name: `${user.first_name} ${user.last_name}`,
+            image: user.profile_picture_url,
+            accessToken: access_token,
+            refreshToken: refresh_token,
           }
         } catch (error) {
           console.error("Auth error:", error)
@@ -66,12 +59,16 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.accessToken = (user as any).accessToken
+        token.refreshToken = (user as any).refreshToken
       }
       return token
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
+        (session as any).accessToken = token.accessToken as string
+        (session as any).refreshToken = token.refreshToken as string
       }
       return session
     },

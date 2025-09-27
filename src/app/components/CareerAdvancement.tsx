@@ -1,136 +1,159 @@
 'use client';
 
-import React from "react";
-import { Vortex } from "@/components/ui/vortex";
+import React, { useState } from "react";
 import { Button, Link } from "@heroui/react";
-import { motion } from "framer-motion";
-import { ArrowRight, UserPlus, Target, Zap } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, UserPlus, Target, Zap, Sparkles, Shield, Star } from "lucide-react";
 
 export default function CareerAdvancement() {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const shouldReduceMotion = useReducedMotion();
+
+    const features = [
+      { 
+        icon: UserPlus, 
+        title: "Professional Profiling", 
+        description: "Comprehensive career assessment and skills matching",
+        color: "accent"
+      },
+      { 
+        icon: Target, 
+        title: "Smart Matching", 
+        description: "Intelligent algorithms for optimal job alignment",
+        color: "primary"
+      },
+      { 
+        icon: Zap, 
+        title: "Direct Access", 
+        description: "Connect directly with hiring managers and recruiters",
+        color: "accent"
+      }
+    ];
+
   return (
-    <section className="relative w-full">
-      <div className="w-full mx-auto rounded-none h-[40rem] overflow-hidden">
-        <Vortex
-          backgroundColor="hsl(var(--heroui-background))"
-          baseHue={220}
-          particleCount={500}
-          baseSpeed={0.1}
-          rangeSpeed={1.2}
-          baseRadius={1}
-          rangeRadius={3}
-          className="flex items-center flex-col justify-center px-6 md:px-10 py-8 w-full h-full"
-        >
+    <section className="relative w-full py-24 bg-bg">
+      <div className="max-w-6xl mx-auto px-6">
+        
+        {/* Content */}
+        <div className="text-center space-y-16">
+          {/* Professional Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center max-w-4xl mx-auto space-y-8"
+            className="space-y-6"
           >
-            {/* Badge */}
+            {/* Professional Badge */}
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20"
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-card border border-border text-card-fg font-medium shadow-lg"
             >
-              <Zap size={16} />
-              Career Acceleration
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <Sparkles size={16} className="text-accent" />
+              <span>Professional Career Development</span>
+              <Shield size={16} className="text-muted-fg" />
             </motion.div>
 
             {/* Main Headline */}
-            <motion.h2 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-foreground text-3xl md:text-5xl lg:text-6xl font-bold text-center leading-tight"
-            >
-              Advance Your Career
+            <div className="relative">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
+                <span className="block text-fg mb-2">
+                  Advance Your Career
+                </span>
+                <span className="block text-primary">
+                  With Confidence
+                </span>
+              </h2>
+            </div>
+
+            <p className="text-xl text-muted-fg leading-relaxed max-w-3xl mx-auto">
+              Professional development through strategic connections and expert guidance.
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary">
-                with Confidence
-              </span>
-            </motion.h2>
-
-            {/* Subtitle - Two Lines Only */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-default-600 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed space-y-2"
-            >
-              <p>Create a profile, get tailored matches, and connect with decision-makers. Your next opportunity is waiting.</p>
-              <p className="flex items-center justify-center gap-4 text-base font-medium">
-                <span className="flex items-center gap-2">
-                  <UserPlus size={16} className="text-primary" />
-                  Create Profile
-                </span>
-                <span className="text-default-400">→</span>
-                <span className="flex items-center gap-2">
-                  <Target size={16} className="text-secondary" />
-                  Get Matched
-                </span>
-                <span className="text-default-400">→</span>
-                <span className="flex items-center gap-2">
-                  <Zap size={16} className="text-success" />
-                  Connect & Grow
-                </span>
-              </p>
-            </motion.div>
-
-            {/* CTA Buttons */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
-            >
-              <Button
-                as={Link}
-                href="/auth/signup"
-                color="primary"
-                size="lg"
-                radius="full"
-                endContent={<ArrowRight size={20} />}
-                className="font-semibold px-8 py-6 text-lg shadow-xl shadow-primary/25 hover:shadow-primary/40 min-w-[200px]"
-              >
-                Start Your Journey
-              </Button>
-              
-              <Button
-                as={Link}
-                href="/jobs"
-                variant="bordered"
-                size="lg"
-                radius="full"
-                className="font-semibold px-8 py-6 text-lg border-default-300 hover:border-primary hover:bg-primary/5 min-w-[200px]"
-              >
-                Explore Opportunities
-              </Button>
-            </motion.div>
-
-            {/* Trust Indicators */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.7 }}
-              className="flex flex-wrap items-center justify-center gap-8 mt-12"
-            >
-              <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-success/10 border border-success/20">
-                <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                <span className="text-sm font-medium text-success">500+ Senior Roles</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-primary/10 border border-primary/20">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-sm font-medium text-primary">92% Success Rate</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-secondary/10 border border-secondary/20">
-                <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-                <span className="text-sm font-medium text-secondary">24hr Response</span>
-              </div>
-            </motion.div>
+              <span className="text-accent font-medium">Your success is our priority.</span>
+            </p>
           </motion.div>
-        </Vortex>
+
+          {/* Professional Feature Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
+          >
+            {features.map((feature, index) => {
+              const IconComponent = feature.icon;
+              return (
+                <motion.div
+                  key={index}
+                  className="relative group cursor-default"
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                  {/* Professional card with theme-aware background */}
+                  <div className="relative p-8 rounded-xl bg-card border border-border shadow-lg hover:shadow-xl transition-all duration-200">
+                    <div className="text-center space-y-4">
+                      {/* Icon */}
+                      <div className="inline-flex p-4 rounded-lg bg-muted group-hover:bg-muted/80 transition-colors duration-200">
+                        <IconComponent size={32} className={`text-${feature.color}`} />
+                      </div>
+                      
+                      <h3 className="text-xl font-bold text-card-fg">
+                        {feature.title}
+                      </h3>
+                      
+                      <p className="text-muted-fg leading-relaxed">
+                        {feature.description}
+                      </p>
+
+                      {/* Status indicator */}
+                      <div className="flex items-center justify-center gap-2 pt-2">
+                        <div className={`w-2 h-2 rounded-full bg-${feature.color}`} />
+                        <span className="text-xs text-muted-fg uppercase tracking-wider">Available</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+
+          {/* Professional Action Center */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            viewport={{ once: true }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-6"
+          >
+            <Button
+              as={Link}
+              href="/auth/signup"
+              size="lg"
+              className="bg-primary text-primary-fg font-semibold px-10 py-4 text-lg rounded-lg hover:opacity-90 transition-all duration-200 min-w-[220px] shadow-sm hover:shadow-md"
+            >
+              <span className="flex items-center gap-2">
+                <Star size={20} />
+                Get Started
+                <ArrowRight size={20} />
+              </span>
+            </Button>
+            
+            <Button
+              as={Link}
+              href="/jobs"
+              variant="bordered"
+              size="lg"
+              className="bg-card border-2 border-border text-card-fg font-semibold px-10 py-4 text-lg rounded-lg hover:bg-muted transition-all duration-200 min-w-[220px]"
+            >
+              <Zap size={18} />
+              Browse Jobs
+            </Button>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

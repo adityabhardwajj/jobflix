@@ -4,6 +4,8 @@ import "./globals.css";
 import { HeroUIProvider } from "./providers/HeroUIProvider";
 import { SessionProvider } from "./providers/SessionProvider";
 import { ToastProvider } from "./components/Toast";
+import { ThemeProvider } from "./providers/ThemeProvider";
+import { QueryClientProvider } from "./providers/QueryClientProvider";
 import SharedLayout from "./components/SharedLayout";
 
 const inter = Inter({
@@ -30,39 +32,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} jobflix-light`} suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('jobflix-theme') || 'system';
-                  var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  
-                  if (theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) {
-                    document.documentElement.className = 'jobflix-dark';
-                  } else {
-                    document.documentElement.className = 'jobflix-light';
-                  }
-                } catch (e) {
-                  document.documentElement.className = 'jobflix-light';
-                }
-              })();
-            `,
-          }}
-        />
-      </head>
+    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <body className="antialiased min-h-screen font-sans">
-        <SessionProvider>
-          <HeroUIProvider>
-            <ToastProvider>
-              <SharedLayout>
-                {children}
-              </SharedLayout>
-            </ToastProvider>
-          </HeroUIProvider>
-        </SessionProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <SessionProvider>
+            <QueryClientProvider>
+              <HeroUIProvider>
+                <ToastProvider>
+                  <SharedLayout>
+                    {children}
+                  </SharedLayout>
+                </ToastProvider>
+              </HeroUIProvider>
+            </QueryClientProvider>
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

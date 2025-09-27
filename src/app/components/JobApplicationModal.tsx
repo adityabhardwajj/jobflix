@@ -145,7 +145,34 @@ export default function JobApplicationModal({ isOpen, onClose, job }: JobApplica
 
       console.log('Submitting application:', applicationData);
       
-      // TODO: Submit to API
+      // Submit to backend API
+      try {
+        const response = await fetch('/api/applications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            job_id: job.id,
+            cover_letter: '',
+            resume_url: '',
+            portfolio_url: '',
+            linkedin_url: '',
+          }),
+        });
+
+        if (response.ok) {
+          // Success - close modal and show success message
+          onClose();
+          // You could add a toast notification here
+          alert('Application submitted successfully!');
+        } else {
+          throw new Error('Failed to submit application');
+        }
+      } catch (error) {
+        console.error('Error submitting application:', error);
+        alert('Failed to submit application. Please try again.');
+      }
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     setIsSubmitted(true);

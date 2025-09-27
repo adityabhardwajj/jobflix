@@ -8,8 +8,8 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = () => {
-    // TODO: Implement job search logic
-    console.log('Searching for jobs:', searchQuery);
+    // Navigate to jobs page with search query
+    window.location.href = `/jobs?search=${encodeURIComponent(searchQuery)}`;
   };
 
   const features = [

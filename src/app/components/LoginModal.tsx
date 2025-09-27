@@ -42,14 +42,24 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleEmailSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual login logic with NextAuth
-      console.log('Email login:', data);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onClose();
-      emailForm.reset();
+      // Use NextAuth signIn with credentials
+      const { signIn } = await import('next-auth/react');
+      const result = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        emailForm.setError('root', { 
+          message: 'Login failed. Please check your credentials.' 
+        });
+      } else {
+        onClose();
+        emailForm.reset();
+        // Optionally redirect or show success message
+        window.location.reload(); // Refresh to update auth state
+      }
     } catch (error) {
       console.error('Login failed:', error);
       emailForm.setError('root', { 

@@ -1,114 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { apiClient } from '@/lib/api'
 
 // GET /api/jobs - Get all jobs with filtering and pagination
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     
-    // Pagination
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const skip = (page - 1) * limit
-
-    // Filters
-    const search = searchParams.get('search') || ''
-    const location = searchParams.get('location') || ''
-    const workType = searchParams.get('workType') || ''
-    const experienceLevel = searchParams.get('experienceLevel') || ''
-    const companyId = searchParams.get('companyId') || ''
-    const minSalary = searchParams.get('minSalary') || ''
-    const maxSalary = searchParams.get('maxSalary') || ''
-    const tags = searchParams.get('tags')?.split(',') || []
-
-    // Build where clause
-    const where: any = {
-      status: 'ACTIVE',
-      OR: [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } }
-      ]
+    // Extract parameters
+    const params = {
+      page: parseInt(searchParams.get('page') || '1'),
+      limit: parseInt(searchParams.get('limit') || '10'),
+      search: searchParams.get('search') || undefined,
+      location: searchParams.get('location') || undefined,
+      work_type: searchParams.get('workType') ? [searchParams.get('workType')!] : undefined,
+      experience_level: searchParams.get('experienceLevel') || undefined,
+      company_id: searchParams.get('companyId') || undefined,
+      salary_min: searchParams.get('minSalary') ? parseInt(searchParams.get('minSalary')!) : undefined,
+      salary_max: searchParams.get('maxSalary') ? parseInt(searchParams.get('maxSalary')!) : undefined,
+      is_remote: searchParams.get('isRemote') === 'true' ? true : undefined,
+      is_featured: searchParams.get('isFeatured') === 'true' ? true : undefined,
     }
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { company: { name: { contains: search, mode: 'insensitive' } } }
-      ]
+    // Remove undefined values
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== undefined)
+    )
+
+    // Use FastAPI backend
+    const response = await apiClient.getJobs(cleanParams)
+
+    if (response.error) {
+      return NextResponse.json(
+        { error: response.error },
+        { status: response.status }
+      )
     }
 
-    if (location) {
-      where.location = { contains: location, mode: 'insensitive' }
-    }
-
-    if (workType) {
-      where.workType = { has: workType }
-    }
-
-    if (experienceLevel) {
-      where.experienceLevel = experienceLevel
-    }
-
-    if (companyId) {
-      where.companyId = companyId
-    }
-
-    if (minSalary || maxSalary) {
-      where.salaryRange = {}
-      if (minSalary) where.salaryRange.min = { gte: parseInt(minSalary) }
-      if (maxSalary) where.salaryRange.max = { lte: parseInt(maxSalary) }
-    }
-
-    if (tags.length > 0) {
-      where.tags = { hasSome: tags }
-    }
-
-    // Get jobs with company information
-    const [jobs, total] = await Promise.all([
-      prisma.job.findMany({
-        where,
-        include: {
-          company: {
-            select: {
-              id: true,
-              name: true,
-              logo: true,
-              size: true,
-              industry: true
-            }
-          },
-          _count: {
-            select: {
-              applications: true
-            }
-          }
-        },
-        orderBy: [
-          { featured: 'desc' },
-          { createdAt: 'desc' }
-        ],
-        skip,
-        take: limit
-      }),
-      prisma.job.count({ where })
-    ])
-
-    const totalPages = Math.ceil(total / limit)
-
-    return NextResponse.json({
-      data: jobs,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalItems: total,
-        itemsPerPage: limit,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1
-      }
-    })
+    return NextResponse.json(response.data)
   } catch (error) {
     console.error('Error fetching jobs:', error)
     return NextResponse.json(
@@ -121,99 +49,19 @@ export async function GET(request: NextRequest) {
 // POST /api/jobs - Create a new job (employers only)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true, role: true }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
     const body = await request.json()
-    const {
-      title,
-      description,
-      requirements,
-      responsibilities,
-      benefits,
-      companyId,
-      location,
-      workType,
-      experienceLevel,
-      salaryRangeMin,
-      salaryRangeMax,
-      salaryRangeCurrency,
-      isRemote,
-      applicationDeadline,
-      applicationUrl,
-      tags
-    } = body
+    
+    // Use FastAPI backend
+    const response = await apiClient.createJob(body)
 
-    // Validate required fields
-    if (!title || !description || !companyId || !location) {
+    if (response.error) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+        { error: response.error },
+        { status: response.status }
       )
     }
 
-    // Check if user has permission to create jobs
-    if (user.role !== 'ADMIN' && user.role !== 'RECRUITER') {
-      return NextResponse.json(
-        { error: 'Unauthorized to create jobs' },
-        { status: 403 }
-      )
-    }
-
-    // Generate slug
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-
-    // Create job
-    const job = await prisma.job.create({
-      data: {
-        title,
-        description,
-        requirements: requirements || [],
-        benefits: benefits || [],
-        companyId,
-        location,
-        type: workType || 'FULL_TIME',
-        level: experienceLevel || 'ENTRY',
-        salary: salaryRangeMin && salaryRangeMax ? `${salaryRangeMin}-${salaryRangeMax} ${salaryRangeCurrency || 'USD'}` : null,
-        remote: isRemote || false,
-        expiresAt: applicationDeadline ? new Date(applicationDeadline) : null,
-        slug: `${slug}-${Date.now()}`
-      },
-      include: {
-        company: {
-          select: {
-            id: true,
-            name: true,
-            logo: true,
-            size: true,
-            industry: true
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(job, { status: 201 })
+    return NextResponse.json(response.data, { status: 201 })
   } catch (error) {
     console.error('Error creating job:', error)
     return NextResponse.json(

@@ -1,119 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { apiClient } from '@/lib/api'
 
-// GET /api/users/profile - Get current user's profile
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+    const response = await apiClient.getUserProfile()
+
+    if (response.error) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: response.error },
+        { status: response.status }
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email! },
-      include: {
-        profile: true,
-        _count: {
-          select: {
-            applications: true,
-            savedJobs: true
-          }
-        }
-      }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json(user)
+    return NextResponse.json(response.data)
   } catch (error) {
     console.error('Error fetching user profile:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch profile' },
+      { error: 'Failed to fetch user profile' },
       { status: 500 }
     )
   }
 }
 
-// PUT /api/users/profile - Update current user's profile
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const body = await request.json()
     
-    if (!session?.user) {
+    const response = await apiClient.updateUserProfile(body)
+
+    if (response.error) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: response.error },
+        { status: response.status }
       )
     }
 
-    const body = await request.json()
-    const {
-      name,
-      phone,
-      profile,
-      skills,
-      preferences
-    } = body
-
-    // Update user basic info
-    const updatedUser = await prisma.user.update({
-      where: { email: session.user.email! },
-      data: {
-        ...(name && { name }),
-        ...(phone && { phone })
-      }
-    })
-
-    // Update or create profile
-    if (profile) {
-      await prisma.userProfile.upsert({
-        where: { userId: updatedUser.id },
-        update: {
-          ...profile,
-          updatedAt: new Date()
-        },
-        create: {
-          userId: updatedUser.id,
-          ...profile
-        }
-      })
-    }
-
-    // Skills and preferences are stored in the profile JSON fields
-
-    // Fetch updated user with all relations
-    const userWithProfile = await prisma.user.findUnique({
-      where: { id: updatedUser.id },
-      include: {
-        profile: true,
-        _count: {
-          select: {
-            applications: true,
-            savedJobs: true
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(userWithProfile)
+    return NextResponse.json(response.data)
   } catch (error) {
     console.error('Error updating user profile:', error)
     return NextResponse.json(
-      { error: 'Failed to update profile' },
+      { error: 'Failed to update user profile' },
       { status: 500 }
     )
   }
 }
-
-

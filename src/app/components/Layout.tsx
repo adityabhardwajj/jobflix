@@ -46,8 +46,9 @@ export default function Layout({ children }: LayoutProps) {
             <div>
               <h4 className="text-lg font-semibold text-white mb-4">Contact</h4>
               <ul className="space-y-2">
-                <li><a href="mailto:support@jobflix.com" className="hover:text-white transition-colors">aadityabhardwaj5cs@gmail.com</a></li>
-                <li><a href="tel:+1234567890" className="hover:text-white transition-colors">+91 6006410085</a></li>
+                <li><a href="mailto:aadityabhardwaj5cs@gmail.com" className="hover:text-white transition-colors">aadityabhardwaj5cs@gmail.com</a></li>
+                <li><a href="https://www.linkedin.com/in/aditya-bhardwaj-961198232/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LinkedIn Profile</a></li>
+                <li><a href="tel:+916006410085" className="hover:text-white transition-colors">+91 6006410085</a></li>
               </ul>
             </div>
           </div>

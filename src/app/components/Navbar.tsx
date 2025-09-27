@@ -86,84 +86,84 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? "glass shadow-large border-b border-white/20"
-          : "glass border-b border-white/10"
+          ? "bg-white shadow-xl border-b border-gray-200"
+          : "bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-lg"
       }`}
     >
       <nav className="container">
         <div className="flex justify-between items-center h-18">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center group">
-              <JobFlixLogoHeader size="lg" showText={true} animated={true} />
+            <Link href="/" className="flex items-center">
+              <JobFlixLogoHeader size="lg" showText={true} animated={false} />
             </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex md:ml-12 space-x-8">
               <button
                 onClick={() => handleNavigation("/")}
-                className={`relative font-medium transition-all duration-200 ${
+                className={`relative font-medium transition-colors duration-200 ${
                   isActive("/")
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-jobflix-text-dark"
+                    : "text-gray-600 hover:text-jobflix-text-dark"
                 }`}
               >
                 Home
                 {isActive("/") && (
-                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-jobflix-primary-green rounded-full"></div>
                 )}
               </button>
               <button
                 onClick={() => handleNavigation("/jobs")}
-                className={`relative font-medium transition-all duration-200 ${
+                className={`relative font-medium transition-colors duration-200 ${
                   isActive("/jobs")
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-jobflix-text-dark"
+                    : "text-gray-600 hover:text-jobflix-text-dark"
                 }`}
               >
                 Jobs
                 {isActive("/jobs") && (
-                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-jobflix-primary-green rounded-full"></div>
                 )}
               </button>
               <button
                 onClick={() => handleNavigation("/tech-news")}
-                className={`relative font-medium transition-all duration-200 ${
+                className={`relative font-medium transition-colors duration-200 ${
                   isActive("/tech-news")
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-jobflix-text-dark"
+                    : "text-gray-600 hover:text-jobflix-text-dark"
                 }`}
               >
                 Tech News
                 {isActive("/tech-news") && (
-                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-jobflix-primary-green rounded-full"></div>
                 )}
               </button>
               <button
                 onClick={() => handleNavigation("/chatbot")}
-                className={`relative font-medium transition-all duration-200 ${
+                className={`relative font-medium transition-colors duration-200 ${
                   isActive("/chatbot")
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-jobflix-text-dark"
+                    : "text-gray-600 hover:text-jobflix-text-dark"
                 }`}
               >
                 Assistant
                 {isActive("/chatbot") && (
-                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-jobflix-primary-green rounded-full"></div>
                 )}
               </button>
               <button
                 onClick={() => handleNavigation("/project-ideas")}
-                className={`relative font-medium transition-all duration-200 ${
+                className={`relative font-medium transition-colors duration-200 ${
                   isActive("/project-ideas")
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-jobflix-text-dark"
+                    : "text-gray-600 hover:text-jobflix-text-dark"
                 }`}
               >
                 Project Ideas
                 {isActive("/project-ideas") && (
-                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-jobflix-primary-green rounded-full"></div>
                 )}
               </button>
             </div>
@@ -175,7 +175,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => setIsLoginModalOpen(true)}
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors px-4 py-2 rounded-lg hover:bg-gray-100"
+                className="text-gray-600 hover:text-jobflix-text-dark font-medium transition-colors duration-200 px-4 py-2 rounded-lg hover:bg-gray-100"
               >
                 Login
               </button>
@@ -184,7 +184,7 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-medium hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 flex items-center space-x-2"
+                  className="bg-primary text-primary-fg px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition-all duration-200 flex items-center space-x-2"
                 >
                   <span>Get Started</span>
                   <ChevronDown
@@ -196,20 +196,20 @@ export default function Navbar() {
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-56 rounded-2xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                  <div className="absolute right-0 mt-3 w-56 rounded-lg bg-card shadow-xl border border-border z-50 overflow-hidden">
                     <div className="py-2">
                       <button
                         onClick={() => handleNavigation("/login/freelancer")}
-                        className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        className="flex items-center w-full px-4 py-3 text-sm text-card-fg hover:bg-muted transition-colors duration-200"
                       >
-                        <User className="w-4 h-4 mr-3" />
+                        <User className="w-4 h-4 mr-3 text-accent" />
                         Login as Freelancer
                       </button>
                       <button
                         onClick={() => handleNavigation("/login/recruiter")}
-                        className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        className="flex items-center w-full px-4 py-3 text-sm text-card-fg hover:bg-muted transition-colors duration-200"
                       >
-                        <Building className="w-4 h-4 mr-3" />
+                        <Building className="w-4 h-4 mr-3 text-accent" />
                         Login as Recruiter
                       </button>
                     </div>
@@ -221,12 +221,12 @@ export default function Navbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
             >
               {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-gray-600" />
+                <X className="w-6 h-6 text-gray-600 hover:text-jobflix-text-dark" />
               ) : (
-                <Menu className="w-6 h-6 text-gray-600" />
+                <Menu className="w-6 h-6 text-gray-600 hover:text-jobflix-text-dark" />
               )}
             </button>
           </div>
@@ -237,85 +237,85 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div
           ref={mobileMenuRef}
-          className="md:hidden bg-white border-t border-gray-200 shadow-lg"
+          className="md:hidden bg-card border-t border-border shadow-lg"
         >
           <div className="container py-4">
             <div className="flex flex-col space-y-4">
               {/* Mobile Navigation Links */}
               <button
                 onClick={() => handleNavigation("/")}
-                className={`text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                className={`text-left px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
                   isActive("/")
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "text-card-fg bg-muted"
+                    : "text-card-fg hover:text-card-fg hover:bg-muted"
                 }`}
               >
                 Home
               </button>
               <button
                 onClick={() => handleNavigation("/jobs")}
-                className={`text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                className={`text-left px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
                   isActive("/jobs")
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "text-card-fg bg-muted"
+                    : "text-card-fg hover:text-card-fg hover:bg-muted"
                 }`}
               >
                 Jobs
               </button>
               <button
                 onClick={() => handleNavigation("/tech-news")}
-                className={`text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                className={`text-left px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
                   isActive("/tech-news")
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "text-card-fg bg-muted"
+                    : "text-card-fg hover:text-card-fg hover:bg-muted"
                 }`}
               >
                 Tech News
               </button>
               <button
                 onClick={() => handleNavigation("/chatbot")}
-                className={`text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                className={`text-left px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
                   isActive("/chatbot")
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "text-card-fg bg-muted"
+                    : "text-card-fg hover:text-card-fg hover:bg-muted"
                 }`}
               >
                 Assistant
               </button>
               <button
                 onClick={() => handleNavigation("/project-ideas")}
-                className={`text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                className={`text-left px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
                   isActive("/project-ideas")
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "text-card-fg bg-muted"
+                    : "text-card-fg hover:text-card-fg hover:bg-muted"
                 }`}
               >
                 Project Ideas
               </button>
 
               {/* Mobile Auth Buttons */}
-              <div className="border-t border-gray-200 pt-4 mt-4">
+              <div className="border-t border-border pt-4 mt-4">
                 <button
                   onClick={() => {
                     setIsLoginModalOpen(true);
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full text-left px-4 py-3 rounded-lg font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
+                  className="w-full text-left px-4 py-3 rounded-lg font-medium text-card-fg hover:text-card-fg hover:bg-muted transition-colors duration-200"
                 >
                   Login
                 </button>
                 <button
                   onClick={() => handleNavigation("/login/freelancer")}
-                  className="w-full text-left px-4 py-3 rounded-lg font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200 flex items-center"
+                  className="w-full text-left px-4 py-3 rounded-lg font-medium text-card-fg hover:text-card-fg hover:bg-muted transition-colors duration-200 flex items-center"
                 >
-                  <User className="w-4 h-4 mr-3" />
+                  <User className="w-4 h-4 mr-3 text-accent" />
                   Login as Freelancer
                 </button>
                 <button
                   onClick={() => handleNavigation("/login/recruiter")}
-                  className="w-full text-left px-4 py-3 rounded-lg font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200 flex items-center"
+                  className="w-full text-left px-4 py-3 rounded-lg font-medium text-card-fg hover:text-card-fg hover:bg-muted transition-colors duration-200 flex items-center"
                 >
-                  <Building className="w-4 h-4 mr-3" />
+                  <Building className="w-4 h-4 mr-3 text-accent" />
                   Login as Recruiter
                 </button>
               </div>

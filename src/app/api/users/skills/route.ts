@@ -1,42 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { apiClient } from '@/lib/api'
 
-// GET /api/users/skills - Get user skills
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
+    const response = await apiClient.getUserSkills()
+
+    if (response.error) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: response.error },
+        { status: response.status }
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: {
-        profile: {
-          select: {
-            skills: true
-          }
-        }
-      }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
-    // Skills are stored as JSON array in the profile
-    const skills = user.profile?.skills || []
-
-    return NextResponse.json({ skills })
+    return NextResponse.json(response.data)
   } catch (error) {
     console.error('Error fetching user skills:', error)
     return NextResponse.json(
@@ -46,59 +22,24 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/users/skills - Update user skills
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const body = await request.json()
     
-    if (!session?.user?.email) {
+    const response = await apiClient.addUserSkill(body)
+
+    if (response.error) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: response.error },
+        { status: response.status }
       )
     }
 
-    const { skills } = await request.json()
-
-    if (!Array.isArray(skills)) {
-      return NextResponse.json(
-        { error: 'Skills must be an array' },
-        { status: 400 }
-      )
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
-    // Update skills in the profile
-    await prisma.userProfile.upsert({
-      where: { userId: user.id },
-      update: {
-        skills: skills
-      },
-      create: {
-        userId: user.id,
-        skills: skills
-      }
-    })
-
-    return NextResponse.json({ 
-      message: 'Skills updated successfully',
-      skills 
-    })
+    return NextResponse.json(response.data, { status: 201 })
   } catch (error) {
-    console.error('Error updating user skills:', error)
+    console.error('Error adding user skill:', error)
     return NextResponse.json(
-      { error: 'Failed to update user skills' },
+      { error: 'Failed to add user skill' },
       { status: 500 }
     )
   }

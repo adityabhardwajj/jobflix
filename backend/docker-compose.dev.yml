@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend (Development)
+  api-dev:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./uploads:/app/uploads
+      - ./jobflix.db:/app/jobflix.db  # SQLite database
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=sqlite+aiosqlite:///./jobflix.db
+      - DATABASE_URL_SYNC=sqlite:///./jobflix.db
+      - JWT_SECRET_KEY=dev-super-secret-jwt-key-12345
+      - SECRET_KEY=dev-super-secret-key-12345
+      - FRONTEND_URL=http://localhost:3006
+      - ALLOWED_HOSTS=["http://localhost:3006", "http://localhost:3000", "http://127.0.0.1:3006", "http://127.0.0.1:3000", "*"]
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - NEWS_API_KEY=${NEWS_API_KEY:-}
+    restart: unless-stopped
+    command: |
+      sh -c "
+        echo 'Running database migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting FastAPI server...' &&
+        uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

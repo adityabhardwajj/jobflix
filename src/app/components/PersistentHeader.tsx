@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { JobFlixLogoHeader } from './JobFlixLogo';
-import ThemeToggle from "./ThemeToggle";
+import { ThemeToggle } from "./ThemeToggle";
 
 export default function PersistentHeader() {
   const [isScrolled, setIsScrolled] = useState(false);

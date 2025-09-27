@@ -4,12 +4,9 @@ import {
   Button,
   Link,
 } from '@heroui/react';
-import { motion, useReducedMotion, useInView } from 'framer-motion';
-import { useRef, useEffect, useState } from 'react';
-import { ArrowRight, Shield } from 'lucide-react';
-import { LayoutTextFlip } from '@/components/ui/layout-text-flip';
-import { SparklesCore } from '@/components/ui/sparkles';
-import { TypewriterEffectSmooth } from '@/components/ui/typewriter-effect';
+import { motion, useReducedMotion, useInView, useScroll, useTransform } from 'framer-motion';
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { ArrowRight, Shield, Play, Sparkles, Zap, Target, Users } from 'lucide-react';
 
 // Animated counter component
 function AnimatedCounter({ 
@@ -61,36 +58,7 @@ function AnimatedCounter({
 
 export default function Hero() {
   const shouldReduceMotion = useReducedMotion();
-  
-  const flipWords = [
-    'verified opportunities',
-    'direct connections', 
-    'career growth',
-    'meaningful work'
-  ];
-
-  const typewriterWords = [
-    {
-      text: "Your",
-      className: "text-foreground",
-    },
-    {
-      text: "Career,",
-      className: "text-foreground",
-    },
-    {
-      text: "Your",
-      className: "text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary",
-    },
-    {
-      text: "Next",
-      className: "text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary",
-    },
-    {
-      text: "Step",
-      className: "text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary",
-    },
-  ];
+  const containerRef = useRef<HTMLElement>(null);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -98,69 +66,73 @@ export default function Hero() {
       opacity: 1,
       transition: {
         staggerChildren: shouldReduceMotion ? 0 : 0.15,
-        delayChildren: 0.1,
+        delayChildren: 0.3,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 24 },
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 40, filter: "blur(10px)" },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: shouldReduceMotion ? 0.1 : 0.7, ease: [0.25, 0.46, 0.45, 0.94] },
+      filter: "blur(0px)",
+      transition: { 
+        duration: shouldReduceMotion ? 0.1 : 1.2, 
+        ease: [0.23, 1, 0.32, 1],
+        type: "spring",
+        damping: 25,
+        stiffness: 100
+      },
     },
   };
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
-      {/* Sparkles Background */}
-      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-background via-content1/30 to-background">
-        <SparklesCore
-          background="transparent"
-          minSize={0.6}
-          maxSize={1.4}
-          particleDensity={100}
-          className="w-full h-full"
-          particleColor="hsl(var(--heroui-primary))"
-        />
-      </div>
+        <section 
+          ref={containerRef}
+          className="relative min-h-screen flex flex-col items-center justify-center bg-bg"
+        >
 
-      {/* Content */}
+      {/* Main Content */}
       <div className="relative z-20 max-w-7xl mx-auto px-6 text-center">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="space-y-8"
+          className="space-y-16"
         >
-          {/* Badge */}
+          {/* Professional Badge */}
           <motion.div
             variants={itemVariants}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20"
+            className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-card border border-border text-card-fg font-medium shadow-lg"
           >
-            <Shield size={16} />
-            Verified roles. Real connections.
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <Shield size={16} className="text-accent" />
+            <span>Verified • Trusted • Professional</span>
+            <Sparkles size={14} className="text-muted-fg" />
           </motion.div>
 
-          {/* Main Headline with Typewriter Effect */}
-          <motion.div variants={itemVariants} className="space-y-6">
-            <div className="flex flex-col items-center justify-center">
-              <TypewriterEffectSmooth 
-                words={typewriterWords}
-                className="flex justify-center"
-                cursorClassName="bg-primary"
-              />
+          {/* Hero Headline */}
+          <motion.div variants={itemVariants} className="space-y-8">
+            <div className="relative">
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
+                <span className="block text-fg mb-4">
+                  Your Career,
+                </span>
+                <span className="block text-primary">
+                  Your Next Step
+                </span>
+              </h1>
             </div>
             
-            <div className="text-xl sm:text-2xl text-default-600 leading-relaxed max-w-4xl mx-auto">
-              <div className="text-center">
-                A precise way to find meaningful work and connect with decision-makers.
-              </div>
-            </div>
+            <p className="text-xl sm:text-2xl text-muted-fg leading-relaxed max-w-4xl mx-auto">
+              Professional opportunities. Trusted connections. Career growth.
+              <br />
+              <span className="text-accent font-medium">Building careers with purpose and precision.</span>
+            </p>
           </motion.div>
 
-          {/* CTA */}
+          {/* Professional CTAs */}
           <motion.div
             variants={itemVariants}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
@@ -168,47 +140,66 @@ export default function Hero() {
             <Button
               as={Link}
               href="/jobs"
-              color="primary"
               size="lg"
-              radius="full"
-              endContent={<ArrowRight size={20} />}
-              className="font-semibold px-8 py-6 text-lg shadow-xl shadow-primary/25 hover:shadow-primary/40"
+              className="bg-primary text-primary-fg font-semibold px-8 py-4 text-lg rounded-lg hover:opacity-90 transition-all duration-200 min-w-[200px] shadow-sm hover:shadow-md"
             >
-              Get Started
+              <span className="flex items-center gap-2">
+                Find Opportunities
+                <ArrowRight size={20} />
+              </span>
+            </Button>
+            
+            <Button
+              as={Link}
+              href="/about"
+              variant="bordered"
+              size="lg"
+              className="bg-card border-2 border-border text-card-fg font-semibold px-8 py-4 text-lg rounded-lg hover:bg-muted transition-all duration-200 min-w-[200px]"
+            >
+              <Play size={18} />
+              Learn More
             </Button>
           </motion.div>
 
-          {/* Stats Grid */}
+          {/* Professional Stats Grid */}
           <motion.div
             variants={itemVariants}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-8 pt-12 max-w-5xl mx-auto"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-16 max-w-5xl mx-auto"
           >
-            {[
-              { label: 'Active Jobs', value: 10000, suffix: '+', sub: 'Curated and updated daily' },
-              { label: 'Verified Companies', value: 500, suffix: '+', sub: 'Startups to Fortune 500' },
-              { label: 'Success Rate', value: 92, suffix: '%', sub: 'Offers within 30 days' },
-              { label: 'Decision-Maker Intros', value: 1200, suffix: '+', sub: 'Warm intros each month' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl lg:text-4xl font-bold text-foreground mb-2">
-                  <AnimatedCounter end={stat.value} suffix={stat.suffix} />
-                </div>
-                <div className="text-sm font-semibold text-default-700 mb-1">{stat.label}</div>
-                <div className="text-xs text-default-500">{stat.sub}</div>
-              </div>
-            ))}
+                  {[
+                { label: 'Active Jobs', value: 15000, suffix: '+', sub: 'Open positions', color: 'primary', icon: Target },
+                { label: 'Companies', value: 750, suffix: '+', sub: 'Trusted partners', color: 'accent', icon: Shield },
+                { label: 'Success Rate', value: 98, suffix: '%', sub: 'Placement success', color: 'primary', icon: Zap },
+                { label: 'Professionals', value: 2500, suffix: '+', sub: 'Network members', color: 'accent', icon: Users },
+              ].map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
+                <motion.div 
+                  key={stat.label} 
+                  className="relative group cursor-default"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {/* Professional card with theme-aware background */}
+                  <div className="relative p-6 rounded-xl bg-card border border-border shadow-lg hover:shadow-xl transition-all duration-200">
+                    <div className="text-center space-y-3">
+                      <div className="inline-flex p-3 rounded-lg bg-muted group-hover:bg-muted/80 transition-colors duration-200">
+                        <IconComponent size={24} className={`text-${stat.color}`} />
+                      </div>
+                      <div className={`text-3xl lg:text-4xl font-bold text-${stat.color}`}>
+                        <AnimatedCounter end={stat.value} suffix={stat.suffix} />
+                      </div>
+                      <div className="text-base font-semibold text-card-fg">{stat.label}</div>
+                      <div className="text-sm text-muted-fg">{stat.sub}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </motion.div>
       </div>
 
-      {/* Gradient Overlays */}
-      <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent h-[2px] w-3/4 blur-sm" />
-      <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-primary/50 to-transparent h-px w-3/4" />
-      <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-secondary/40 to-transparent h-[5px] w-1/4 blur-sm" />
-      <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-secondary/60 to-transparent h-px w-1/4" />
-
-      {/* Radial Gradient Mask */}
-      <div className="absolute inset-0 w-full h-full [mask-image:radial-gradient(50%_50%_at_50%_50%,transparent_0%,black_100%)]" />
     </section>
   );
 }

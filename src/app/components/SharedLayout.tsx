@@ -18,7 +18,7 @@ export default function SharedLayout({
   className = ""
 }: SharedLayoutProps) {
   return (
-    <div className={`min-h-screen bg-background text-foreground flex flex-col ${className}`}>
+    <div className={`min-h-screen bg-bg text-fg flex flex-col ${className}`}>
       {showHeader && <Header />}
       <main className="flex-1">
         {children}
@@ -27,4 +27,5 @@ export default function SharedLayout({
     </div>
   );
 }
+
 

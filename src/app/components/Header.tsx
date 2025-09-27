@@ -14,58 +14,39 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  Chip,
 } from '@heroui/react';
 
-import { useTheme } from '../hooks/useTheme';
-import { useState, useMemo } from 'react';
+import { ThemeToggle } from './ThemeToggle';
+import NotificationBell from './notifications/NotificationBell';
+import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { 
-  Sun, 
-  Moon, 
-  Monitor, 
   Briefcase, 
   Newspaper, 
   Lightbulb, 
   Bot,
   LogIn,
-  ArrowRight,
   User,
   LogOut,
   Settings
 } from 'lucide-react';
-import { JobFlixLogoHeader } from './JobFlixLogo';
 
 const navigationItems = [
-  { name: 'Jobs', href: '/jobs', icon: Briefcase },
-  { name: 'Tech News', href: '/tech-news', icon: Newspaper },
-  { name: 'Project Ideas', href: '/project-ideas', icon: Lightbulb },
-  { name: 'Assistant', href: '/assistant', icon: Bot },
-];
-
-const themeOptions = [
-  { key: 'light', label: 'Light', icon: Sun },
-  { key: 'dark', label: 'Dark', icon: Moon },
-  { key: 'system', label: 'System', icon: Monitor },
+  { name: 'Jobs', href: '/jobs' },
+  { name: 'Tech News', href: '/tech-news' },
+  { name: 'Projects', href: '/project-ideas' },
+  { name: 'Assistant', href: '/assistant' },
 ];
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
   const { data: session, status } = useSession();
-
-  const ThemeIcon = useMemo(() => {
-    const option = themeOptions.find((opt) => opt.key === theme);
-    return option?.icon ?? Sun;
-  }, [theme]);
-
-  const currentThemeOption = themeOptions.find(option => option.key === theme);
 
   return (
     <Navbar
       onMenuOpenChange={setIsMenuOpen}
       isMenuOpen={isMenuOpen}
-      className="supports-[backdrop-filter]:bg-background/55 bg-background/80 border-b border-default-200/70"
+      className="bg-card/95 backdrop-blur-sm border-b border-border"
       maxWidth="full"
       position="sticky"
     >
@@ -73,78 +54,45 @@ export default function Header() {
       <NavbarContent>
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="sm:hidden"
+          className="sm:hidden text-fg"
         />
-        <NavbarBrand className="gap-3">
+        <NavbarBrand>
           <Link href="/" className="flex items-center">
-            <JobFlixLogoHeader size="md" showText={true} animated={true} />
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold text-fg">
+                JobFlix
+              </div>
+            </div>
           </Link>
-          <Chip size="sm" variant="flat" color="primary" className="hidden md:inline-flex">
-            Verified talent
-          </Chip>
         </NavbarBrand>
       </NavbarContent>
 
       {/* Desktop Navigation */}
-      <NavbarContent className="hidden sm:flex gap-2 lg:gap-3" justify="center">
-        {navigationItems.map((item) => {
-          const IconComponent = item.icon;
-          return (
-            <NavbarItem key={item.name}>
-              <Button
-                as={Link}
-                href={item.href}
-                variant="flat"
-                radius="full"
-                className="gap-2 px-4 text-sm font-medium text-default-600 hover:text-primary hover:bg-primary/10"
-                color="default"
-                startContent={<IconComponent size={16} />}
-              >
-                {item.name}
-              </Button>
-            </NavbarItem>
-          );
-        })}
+      <NavbarContent className="hidden sm:flex gap-8" justify="center">
+        {navigationItems.map((item) => (
+          <NavbarItem key={item.name}>
+            <Link
+              href={item.href}
+              className="text-sm font-medium text-muted-fg hover:text-fg transition-colors duration-200 py-2"
+            >
+              {item.name}
+            </Link>
+          </NavbarItem>
+        ))}
       </NavbarContent>
 
       {/* Right side actions */}
       <NavbarContent justify="end">
+        {/* Notifications */}
+        {session && (
+          <NavbarItem>
+            <NotificationBell />
+          </NavbarItem>
+        )}
+        
         {/* Theme Toggle */}
         <NavbarItem>
-          <Dropdown className="min-w-40">
-            <DropdownTrigger>
-              <Button
-                variant="flat"
-                radius="full"
-                isIconOnly
-                aria-label="Toggle theme"
-                className="text-default-500"
-              >
-                <ThemeIcon size={20} />
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu
-              aria-label="Theme selection"
-              selectedKeys={[theme]}
-              selectionMode="single"
-              onSelectionChange={(keys) => {
-                const selectedTheme = Array.from(keys)[0] as 'light' | 'dark' | 'system';
-                setTheme(selectedTheme);
-              }}
-            >
-              {themeOptions.map((option) => {
-                const IconComponent = option.icon;
-                return (
-                  <DropdownItem
-                    key={option.key}
-                    startContent={<IconComponent size={16} />}
-                  >
-                    {option.label}
-                  </DropdownItem>
-                );
-              })}
-            </DropdownMenu>
-          </Dropdown>
+          <ThemeToggle />
         </NavbarItem>
 
         {/* Authentication */}
@@ -154,7 +102,7 @@ export default function Header() {
               <DropdownTrigger>
                 <Button
                   variant="flat"
-                  radius="full"
+                  className="bg-muted text-card-fg hover:bg-muted/80 px-4 py-2 min-w-0"
                   startContent={
                     session.user?.image ? (
                       <img
@@ -166,16 +114,19 @@ export default function Header() {
                       <User size={16} />
                     )
                   }
-                  className="px-4 text-sm"
                 >
                   {session.user?.name?.split(' ')[0] || 'User'}
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu aria-label="User menu">
+              <DropdownMenu 
+                aria-label="User menu"
+                className="bg-card border border-border"
+              >
                 <DropdownItem
                   key="dashboard"
                   startContent={<User size={16} />}
                   href="/dashboard"
+                  className="text-card-fg hover:bg-muted"
                 >
                   Dashboard
                 </DropdownItem>
@@ -183,6 +134,7 @@ export default function Header() {
                   key="profile"
                   startContent={<Settings size={16} />}
                   href="/profile"
+                  className="text-card-fg hover:bg-muted"
                 >
                   Profile
                 </DropdownItem>
@@ -190,7 +142,8 @@ export default function Header() {
                   key="logout"
                   startContent={<LogOut size={16} />}
                   color="danger"
-                  onPress={() => signOut({ callbackUrl: '/' })}
+                  className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  onClick={() => signOut()}
                 >
                   Sign Out
                 </DropdownItem>
@@ -198,113 +151,63 @@ export default function Header() {
             </Dropdown>
           </NavbarItem>
         ) : (
-          <>
-            {/* Login */}
-            <NavbarItem className="hidden lg:flex">
-              <Button
-                as={Link}
-                href="/auth/signin"
-                variant="flat"
-                radius="full"
-                startContent={<LogIn size={16} />}
-                className="px-4 text-sm text-default-600"
-              >
-                Sign In
-              </Button>
-            </NavbarItem>
-
-            {/* Get Started CTA */}
-            <NavbarItem>
-              <Button
-                as={Link}
-                color="primary"
-                href="/auth/signup"
-                variant="solid"
-                radius="full"
-                endContent={<ArrowRight size={16} />}
-                className="font-semibold px-6 shadow-sm shadow-primary/25 hover:shadow-primary/40"
-              >
-                Get Started
-              </Button>
-            </NavbarItem>
-          </>
+          <NavbarItem>
+            <Button
+              as={Link}
+              href="/auth/signin"
+              className="bg-primary text-primary-fg hover:bg-primary/90 px-6 py-2 font-medium"
+              startContent={<LogIn size={16} />}
+            >
+              Sign In
+            </Button>
+          </NavbarItem>
         )}
       </NavbarContent>
 
-      {/* Mobile Menu */}
-      <NavbarMenu className="pt-6">
-        {navigationItems.map((item) => {
-          const IconComponent = item.icon;
-          return (
-            <NavbarMenuItem key={item.name}>
-              <Link
-                color="foreground"
-                className="w-full flex items-center gap-3 py-2 text-lg"
-                href={item.href}
-                size="lg"
-                onPress={() => setIsMenuOpen(false)}
-              >
-                <IconComponent size={20} />
-                {item.name}
-              </Link>
-            </NavbarMenuItem>
-          );
-        })}
+      {/* Mobile Navigation Menu */}
+      <NavbarMenu className="bg-card/95 backdrop-blur-sm border-t border-border mt-2">
+        {navigationItems.map((item, index) => (
+          <NavbarMenuItem key={`${item.name}-${index}`}>
+            <Link
+              className="w-full text-card-fg hover:text-accent py-3 text-base font-medium transition-colors duration-200"
+              href={item.href}
+              size="lg"
+            >
+              {item.name}
+            </Link>
+          </NavbarMenuItem>
+        ))}
         
-        <NavbarMenuItem className="mt-4 pt-4 border-t border-divider">
+        {/* Mobile Auth */}
+        <NavbarMenuItem className="pt-4 border-t border-border mt-4">
           {session ? (
-            <>
+            <div className="space-y-2">
               <Link
+                className="w-full text-card-fg hover:text-accent py-2 text-base font-medium transition-colors duration-200 block"
                 href="/dashboard"
-                className="w-full flex items-center gap-3 py-2 text-lg"
-                onPress={() => setIsMenuOpen(false)}
               >
-                <User size={20} />
                 Dashboard
               </Link>
               <Link
+                className="w-full text-card-fg hover:text-accent py-2 text-base font-medium transition-colors duration-200 block"
                 href="/profile"
-                className="w-full flex items-center gap-3 py-2 text-lg"
-                onPress={() => setIsMenuOpen(false)}
               >
-                <Settings size={20} />
                 Profile
               </Link>
-              <Button
-                variant="flat"
-                color="danger"
-                className="w-full font-medium mt-2"
-                startContent={<LogOut size={16} />}
-                onPress={() => {
-                  setIsMenuOpen(false)
-                  signOut({ callbackUrl: '/' })
-                }}
+              <button
+                className="w-full text-left text-red-600 hover:text-red-700 py-2 text-base font-medium transition-colors duration-200"
+                onClick={() => signOut()}
               >
                 Sign Out
-              </Button>
-            </>
+              </button>
+            </div>
           ) : (
-            <>
-              <Link
-                href="/auth/signin"
-                className="w-full flex items-center gap-3 py-2 text-lg text-default-600"
-                onPress={() => setIsMenuOpen(false)}
-              >
-                <LogIn size={20} />
-                Sign In
-              </Link>
-              <Button
-                as={Link}
-                color="primary"
-                href="/auth/signup"
-                variant="solid"
-                className="w-full font-medium mt-2"
-                endContent={<ArrowRight size={16} />}
-                onPress={() => setIsMenuOpen(false)}
-              >
-                Get Started
-              </Button>
-            </>
+            <Link
+              className="w-full text-primary hover:text-primary/80 py-2 text-base font-medium transition-colors duration-200"
+              href="/auth/signin"
+            >
+              Sign In
+            </Link>
           )}
         </NavbarMenuItem>
       </NavbarMenu>
