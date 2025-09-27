@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, Play, Sparkles, Zap } from 'lucide-react';
+import { Building2, Users, TrendingUp, Sparkles, Zap } from 'lucide-react';
 
 interface JobFlixLogoProps {
   className?: string;
@@ -95,28 +95,29 @@ export default function JobFlixLogo({
       case 'play':
         return (
           <motion.div
-            className={`${currentSize.icon} bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden`}
+            className={`${currentSize.icon} bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden border border-slate-700`}
             variants={iconVariants}
             transition={{ duration: 0.3 }}
           >
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+            {/* Professional Grid Pattern */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.1)_100%)]" />
             
-            {/* Main Icon */}
-            <Briefcase 
+            {/* Main Building Icon */}
+            <Building2 
               className="w-1/2 h-1/2 text-white relative z-10" 
               strokeWidth={2.5}
             />
             
-            {/* Play Button Overlay */}
+            {/* Professional Indicator */}
             {animated && (
               <motion.div
-                className={`absolute bottom-0 right-0 ${currentSize.playIcon} bg-success rounded-full flex items-center justify-center shadow-sm`}
+                className={`absolute bottom-1 right-1 ${currentSize.playIcon} bg-emerald-500 rounded-full flex items-center justify-center shadow-sm border border-emerald-400`}
                 variants={pulseVariants}
                 animate="animate"
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                <Play className="w-1/2 h-1/2 text-white fill-white ml-0.5" />
+                <TrendingUp className="w-1/2 h-1/2 text-white" strokeWidth={2} />
               </motion.div>
             )}
           </motion.div>
@@ -125,13 +126,13 @@ export default function JobFlixLogo({
       case 'minimal':
         return (
           <motion.div
-            className={`${currentSize.icon} bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center border border-primary/30`}
+            className={`${currentSize.icon} bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center border-2 border-slate-300 shadow-sm`}
             variants={iconVariants}
             transition={{ duration: 0.3 }}
           >
-            <Briefcase 
-              className="w-1/2 h-1/2 text-primary" 
-              strokeWidth={2}
+            <Building2 
+              className="w-1/2 h-1/2 text-slate-700" 
+              strokeWidth={2.5}
             />
           </motion.div>
         );
@@ -139,18 +140,18 @@ export default function JobFlixLogo({
       default:
         return (
           <motion.div
-            className={`${currentSize.icon} bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-lg`}
+            className={`${currentSize.icon} bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg flex items-center justify-center shadow-lg border border-slate-600`}
             variants={iconVariants}
             transition={{ duration: 0.3 }}
           >
             <div className="relative">
-              <Briefcase 
+              <Building2 
                 className="w-1/2 h-1/2 text-white" 
                 strokeWidth={2.5}
               />
               {animated && (
                 <motion.div
-                  className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-success rounded-full"
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-emerald-400"
                   variants={pulseVariants}
                   animate="animate"
                   transition={{ duration: 2, repeat: Infinity }}
@@ -167,10 +168,10 @@ export default function JobFlixLogo({
 
     return (
       <div className={`flex ${variant === 'stacked' ? 'flex-col items-center' : 'items-center'}`}>
-        <span className={`font-bold tracking-tight ${currentSize.text} bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent`}>
+        <span className={`font-semibold tracking-wide ${currentSize.text} text-slate-800 dark:text-slate-200`}>
           Job
         </span>
-        <span className={`font-bold tracking-tight ${currentSize.text} bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent ${variant === 'stacked' ? '' : 'ml-0.5'}`}>
+        <span className={`font-bold tracking-wide ${currentSize.text} bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-300 dark:to-slate-100 bg-clip-text text-transparent ${variant === 'stacked' ? '' : 'ml-0.5'}`}>
           Flix
         </span>
       </div>
