@@ -12,7 +12,7 @@ export async function GET(
     if (response.error) {
       return NextResponse.json(
         { error: response.error },
-        { status: response.status }
+        { status: 500 }
       )
     }
 
@@ -39,7 +39,7 @@ export async function PUT(
     if (response.error) {
       return NextResponse.json(
         { error: response.error },
-        { status: response.status }
+        { status: 500 }
       )
     }
 
@@ -64,7 +64,7 @@ export async function DELETE(
     if (response.error) {
       return NextResponse.json(
         { error: response.error },
-        { status: response.status }
+        { status: 500 }
       )
     }
 

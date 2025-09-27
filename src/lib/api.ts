@@ -41,9 +41,63 @@ class ApiClient {
     return this.request<Job>(`/jobs/${id}`);
   }
 
+  async updateJob(id: string, data: any): Promise<ApiResponse<Job>> {
+    return this.request<Job>(`/jobs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteJob(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/jobs/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getApplications(filters: any = {}): Promise<ApiResponse<any[]>> {
+    const queryParams = new URLSearchParams(filters).toString();
+    return this.request<any[]>(`/applications?${queryParams}`);
+  }
+
+  async getApplication(applicationId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/applications/${applicationId}`);
+  }
+
+  async getDashboardStats(): Promise<ApiResponse<any>> {
+    return this.request<any>('/dashboard/stats');
+  }
+
+  async getNotifications(filters: any = {}): Promise<ApiResponse<any[]>> {
+    const queryParams = new URLSearchParams(filters).toString();
+    return this.request<any[]>(`/notifications?${queryParams}`);
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/notifications/${notificationId}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  async markAllNotificationsAsRead(): Promise<ApiResponse<any>> {
+    return this.request<any>('/notifications/read-all', {
+      method: 'PUT',
+    });
+  }
+
+  async login(credentials: { email: string; password: string }): Promise<ApiResponse<any>> {
+    return this.request<any>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  }
+
   // Profile API
   async getProfile(): Promise<ApiResponse<UserProfile>> {
     return this.request<UserProfile>('/profile');
+  }
+
+  async getUserProfile(): Promise<ApiResponse<UserProfile>> {
+    return this.request<UserProfile>('/users/profile');
   }
 
   async updateProfile(profile: UserProfile): Promise<ApiResponse<UserProfile>> {
@@ -53,11 +107,68 @@ class ApiClient {
     });
   }
 
+  async updateUserProfile(profile: UserProfile): Promise<ApiResponse<UserProfile>> {
+    return this.request<UserProfile>('/users/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profile),
+    });
+  }
+
+  async getUserSkills(): Promise<ApiResponse<string[]>> {
+    return this.request<string[]>('/users/skills');
+  }
+
+  async addUserSkill(skill: string): Promise<ApiResponse<string[]>> {
+    return this.request<string[]>('/users/skills', {
+      method: 'POST',
+      body: JSON.stringify({ skill }),
+    });
+  }
+
   // Application API
   async applyToJob(payload: ApplyPayload): Promise<ApiResponse<{ applicationId: string }>> {
     return this.request<{ applicationId: string }>('/apply', {
       method: 'POST',
       body: JSON.stringify(payload),
+    });
+  }
+
+  async createApplicationDraft(jobId: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/applications/draft', {
+      method: 'POST',
+      body: JSON.stringify({ jobId }),
+    });
+  }
+
+  async updateApplicationDraft(draftId: string, data: any): Promise<ApiResponse<any>> {
+    return this.request<any>(`/applications/draft/${draftId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async uploadResume(draftId: string, file: File): Promise<ApiResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('draftId', draftId);
+    
+    return this.request<any>('/applications/upload-resume', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async saveScreeningAnswers(draftId: string, answers: any[]): Promise<ApiResponse<any>> {
+    return this.request<any>('/applications/screening-answers', {
+      method: 'POST',
+      body: JSON.stringify({ draftId, answers }),
+    });
+  }
+
+  async submitApplication(draftId: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/applications/submit', {
+      method: 'POST',
+      body: JSON.stringify({ draftId }),
     });
   }
 

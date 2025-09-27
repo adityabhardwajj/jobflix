@@ -11,7 +11,7 @@ import {
   Heart,
   Settings
 } from 'lucide-react';
-import { JobFlixLogoHeader } from './JobFlixLogo';
+import { JobFlixLogoHeader } from '@/app/components/JobFlixLogo';
 
 export function NavBar() {
   const pathname = usePathname();

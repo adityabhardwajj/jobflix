@@ -54,7 +54,7 @@ export class GestureHandler {
         currentY: y,
         velocityX,
         velocityY,
-        direction: this.getDirection(x, y, velocityX, velocityY)
+        direction: this.getDirection(x, y, velocityX, velocityY) || undefined
       };
     }
 

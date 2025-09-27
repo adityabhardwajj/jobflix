@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     if (response.error) {
       return NextResponse.json(
         { error: response.error },
-        { status: response.status }
+        { status: 500 }
       )
     }
 
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (response.error) {
       return NextResponse.json(
         { error: response.error },
-        { status: response.status }
+        { status: 500 }
       )
     }
 

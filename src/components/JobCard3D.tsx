@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Text, Box, Sphere } from '@react-three/drei';
 import { motion } from 'framer-motion';
+import * as THREE from 'three';
 import { Job } from '@/lib/schemas';
 import { CompatibilityBadge } from './CompatibilityBadge';
 import { VideoPreview } from './VideoPreview';
@@ -36,7 +37,7 @@ function Card3D({ job, isActive }: { job: Job; isActive: boolean }) {
       if (hovered) {
         meshRef.current.scale.setScalar(1.05);
       } else {
-        meshRef.current.scale.lerp({ x: 1, y: 1, z: 1 }, 0.1);
+        meshRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
       }
     }
   });
@@ -190,7 +191,6 @@ export function JobCard3D({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onLongPress={handleLongPress}
       initial={{ scale: 0.96, opacity: 0 }}
       animate={{ 
         scale: isAnimating ? 0.96 : 1,
