@@ -1,72 +1,65 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { apiClient } from '@/lib/api'
+import { NextRequest, NextResponse } from 'next/server';
+import { sampleJobs } from '@/lib/sampleData';
+import { calculateCompatibility } from '@/lib/match';
+import { Job } from '@/lib/schemas';
 
-// GET /api/jobs - Get all jobs with filtering and pagination
+// In-memory storage for demo purposes
+let jobs = [...sampleJobs];
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(request.url);
+    const profileId = searchParams.get('profileId');
     
-    // Extract parameters
-    const params = {
-      page: parseInt(searchParams.get('page') || '1'),
-      limit: parseInt(searchParams.get('limit') || '10'),
-      search: searchParams.get('search') || undefined,
-      location: searchParams.get('location') || undefined,
-      work_type: searchParams.get('workType') ? [searchParams.get('workType')!] : undefined,
-      experience_level: searchParams.get('experienceLevel') || undefined,
-      company_id: searchParams.get('companyId') || undefined,
-      salary_min: searchParams.get('minSalary') ? parseInt(searchParams.get('minSalary')!) : undefined,
-      salary_max: searchParams.get('maxSalary') ? parseInt(searchParams.get('maxSalary')!) : undefined,
-      is_remote: searchParams.get('isRemote') === 'true' ? true : undefined,
-      is_featured: searchParams.get('isFeatured') === 'true' ? true : undefined,
-    }
+    // In a real app, you'd fetch from database and calculate compatibility
+    // For demo, we'll use sample data with mock compatibility scores
+    const jobsWithCompatibility = jobs.map(job => ({
+      ...job,
+      compatibility: Math.floor(Math.random() * 40) + 60 // Mock compatibility 60-100
+    }));
 
-    // Remove undefined values
-    const cleanParams = Object.fromEntries(
-      Object.entries(params).filter(([_, value]) => value !== undefined)
-    )
-
-    // Use FastAPI backend
-    const response = await apiClient.getJobs(cleanParams)
-
-    if (response.error) {
-      return NextResponse.json(
-        { error: response.error },
-        { status: response.status }
-      )
-    }
-
-    return NextResponse.json(response.data)
+    return NextResponse.json({
+      success: true,
+      data: jobsWithCompatibility,
+      total: jobsWithCompatibility.length
+    });
   } catch (error) {
-    console.error('Error fetching jobs:', error)
+    console.error('Error fetching jobs:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch jobs' },
+      { success: false, error: 'Failed to fetch jobs' },
       { status: 500 }
-    )
+    );
   }
 }
 
-// POST /api/jobs - Create a new job (employers only)
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    
-    // Use FastAPI backend
-    const response = await apiClient.createJob(body)
+    const body = await request.json();
+    const newJob: Job = {
+      id: `job-${Date.now()}`,
+      title: body.title,
+      company: body.company,
+      logoUrl: body.logoUrl,
+      salaryRange: body.salaryRange,
+      location: body.location,
+      tags: body.tags,
+      description: body.description,
+      videoUrl: body.videoUrl,
+      createdAt: new Date().toISOString(),
+      compatibility: 0 // Will be calculated
+    };
 
-    if (response.error) {
-      return NextResponse.json(
-        { error: response.error },
-        { status: response.status }
-      )
-    }
+    jobs.push(newJob);
 
-    return NextResponse.json(response.data, { status: 201 })
+    return NextResponse.json({
+      success: true,
+      data: newJob
+    });
   } catch (error) {
-    console.error('Error creating job:', error)
+    console.error('Error creating job:', error);
     return NextResponse.json(
-      { error: 'Failed to create job' },
+      { success: false, error: 'Failed to create job' },
       { status: 500 }
-    )
+    );
   }
 }
