@@ -1,18 +1,27 @@
 import React, { createContext, useReducer, useEffect } from "react";
+import { tokenManager } from "../utils/tokenManager";
 
 const AuthContext = createContext();
 
 const initialState = {
   user: JSON.parse(localStorage.getItem("ideaverse_user")) || null,
-  token: localStorage.getItem("ideaverse_token") || null,
+  token: tokenManager.getAccessToken(),
+  refreshToken: tokenManager.getRefreshToken(),
 };
 
 function reducer(state, action) {
   switch (action.type) {
     case "LOGIN":
-      return { ...state, user: action.payload.user, token: action.payload.token };
+      return {
+        ...state,
+        user: action.payload.user,
+        token: action.payload.token,
+        refreshToken: action.payload.refreshToken,
+      };
     case "LOGOUT":
-      return { user: null, token: null };
+      return { user: null, token: null, refreshToken: null };
+    case "UPDATE_TOKEN":
+      return { ...state, token: action.payload.token };
     default:
       return state;
   }
@@ -24,12 +33,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (state.user && state.token) {
       localStorage.setItem("ideaverse_user", JSON.stringify(state.user));
-      localStorage.setItem("ideaverse_token", state.token);
+      tokenManager.setTokens(state.token, state.refreshToken);
     } else {
       localStorage.removeItem("ideaverse_user");
-      localStorage.removeItem("ideaverse_token");
+      tokenManager.clearTokens();
     }
-  }, [state.user, state.token]);
+  }, [state.user, state.token, state.refreshToken]);
 
   return <AuthContext.Provider value={{ state, dispatch }}>{children}</AuthContext.Provider>;
 };

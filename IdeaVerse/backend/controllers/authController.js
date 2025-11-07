@@ -1,33 +1,116 @@
 import asyncHandler from "express-async-handler";
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import RefreshToken from "../models/RefreshToken.js";
 import Token from "../models/Token.js";
 import emailService from "../services/emailService.js";
 import logger from "../utils/logger.js";
-import jwt from "jsonwebtoken";
 
-const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+const generateAccessToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "15m" });
+};
 
-/**
- * Request password reset
- * POST /api/auth/request-password-reset
- */
+const generateRefreshToken = async (userId, deviceInfo = {}) => {
+  const token = RefreshToken.generateToken();
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+  await RefreshToken.create({
+    token,
+    userId,
+    expiresAt,
+    deviceInfo,
+  });
+
+  return token;
+};
+
+// @desc    Refresh access token
+// @route   POST /api/auth/refresh
+// @access  Public
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({
+      success: false,
+      error: { message: "Refresh token is required", code: 400 },
+    });
+  }
+
+  const tokenDoc = await RefreshToken.findOne({
+    token: refreshToken,
+    revoked: false,
+    expiresAt: { $gt: new Date() },
+  }).populate("userId");
+
+  if (!tokenDoc || !tokenDoc.userId) {
+    return res.status(401).json({
+      success: false,
+      error: { message: "Invalid or expired refresh token", code: 401 },
+    });
+  }
+
+  // Check if user is blocked
+  if (tokenDoc.userId.isBlocked) {
+    await RefreshToken.updateOne({ _id: tokenDoc._id }, { revoked: true });
+    return res.status(403).json({
+      success: false,
+      error: { message: "Account has been blocked", code: 403 },
+    });
+  }
+
+  // Generate new access token
+  const accessToken = generateAccessToken(tokenDoc.userId._id);
+
+  res.json({
+    success: true,
+    data: {
+      accessToken,
+      refreshToken: tokenDoc.token, // Return same refresh token
+    },
+  });
+});
+
+// @desc    Revoke refresh token (logout)
+// @route   POST /api/auth/revoke
+// @access  Private
+export const revokeRefreshToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  const userId = req.user._id;
+
+  if (refreshToken) {
+    await RefreshToken.updateOne(
+      { token: refreshToken, userId },
+      { revoked: true }
+    );
+  } else {
+    // Revoke all tokens for this user
+    await RefreshToken.updateMany({ userId }, { revoked: true });
+  }
+
+  res.json({
+    success: true,
+    message: "Token revoked successfully",
+  });
+});
+
+// @desc    Request password reset
+// @route   POST /api/auth/request-password-reset
+// @access  Public
 export const requestPasswordReset = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
   if (!user) {
-    // Don't reveal if user exists or not for security
+    // Don't reveal if user exists for security
     return res.json({
       success: true,
-      message: "If an account exists with this email, a password reset link has been sent",
+      message: "If an account exists with this email, a password reset link has been sent.",
     });
   }
 
-  // Delete any existing password reset tokens for this user
-  await Token.deleteMany({ userId: user._id, type: "passwordReset" });
-
-  // Generate token
+  // Generate reset token
   const resetToken = Token.generateToken();
   await Token.create({
     userId: user._id,
@@ -42,27 +125,22 @@ export const requestPasswordReset = asyncHandler(async (req, res) => {
     logger.info(`Password reset email sent to: ${user.email}`);
   } catch (error) {
     logger.error(`Failed to send password reset email: ${error.message}`);
-    // Still return success to not reveal if email exists
   }
 
   res.json({
     success: true,
-    message: "If an account exists with this email, a password reset link has been sent",
+    message: "If an account exists with this email, a password reset link has been sent.",
   });
 });
 
-/**
- * Reset password with token
- * POST /api/auth/reset-password
- */
+// @desc    Reset password
+// @route   POST /api/auth/reset-password
+// @access  Public
 export const resetPassword = asyncHandler(async (req, res) => {
   const { token, newPassword } = req.body;
 
-  // Hash token to find in database
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
   const tokenDoc = await Token.findOne({
-    token: hashedToken,
+    token,
     type: "passwordReset",
     expiresAt: { $gt: new Date() },
   });
@@ -70,7 +148,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   if (!tokenDoc) {
     return res.status(400).json({
       success: false,
-      error: { message: "Invalid or expired token", code: 400 },
+      error: { message: "Invalid or expired reset token", code: 400 },
     });
   }
 
@@ -86,43 +164,34 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  // Delete token
-  await Token.deleteMany({ userId: user._id, type: "passwordReset" });
+  // Delete the token
+  await Token.deleteOne({ _id: tokenDoc._id });
+
+  // Revoke all refresh tokens for security
+  await RefreshToken.updateMany({ userId: user._id }, { revoked: true });
 
   logger.info(`Password reset successful for user: ${user.email}`);
 
   res.json({
     success: true,
-    message: "Password reset successful. Please login with your new password.",
+    message: "Password reset successfully",
   });
 });
 
-/**
- * Request email verification
- * POST /api/auth/request-email-verify
- */
+// @desc    Request email verification
+// @route   POST /api/auth/request-email-verify
+// @access  Private
 export const requestEmailVerification = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      error: { message: "User not found", code: 404 },
-    });
-  }
+  const user = req.user;
 
   if (user.isEmailVerified) {
-    return res.json({
-      success: true,
-      message: "Email is already verified",
+    return res.status(400).json({
+      success: false,
+      error: { message: "Email already verified", code: 400 },
     });
   }
 
-  // Delete any existing verification tokens
-  await Token.deleteMany({ userId: user._id, type: "emailVerification" });
-
-  // Generate token
+  // Generate verification token
   const verificationToken = Token.generateToken();
   await Token.create({
     userId: user._id,
@@ -137,28 +206,19 @@ export const requestEmailVerification = asyncHandler(async (req, res) => {
     logger.info(`Verification email sent to: ${user.email}`);
   } catch (error) {
     logger.error(`Failed to send verification email: ${error.message}`);
-    throw new Error("Failed to send verification email");
   }
 
   res.json({
     success: true,
-    message: "Verification email sent. Please check your inbox.",
+    message: "Verification email sent",
   });
 });
 
-/**
- * Verify email with token
- * GET /api/auth/verify-email?token=...
- */
+// @desc    Verify email
+// @route   GET /api/auth/verify-email
+// @access  Public
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { token } = req.query;
-
-  if (!token) {
-    return res.status(400).json({
-      success: false,
-      error: { message: "Token is required", code: 400 },
-    });
-  }
 
   const tokenDoc = await Token.findOne({
     token,
@@ -169,7 +229,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   if (!tokenDoc) {
     return res.status(400).json({
       success: false,
-      error: { message: "Invalid or expired token", code: 400 },
+      error: { message: "Invalid or expired verification token", code: 400 },
     });
   }
 
@@ -181,25 +241,19 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     });
   }
 
-  // Verify email
   user.isEmailVerified = true;
   user.emailVerifiedAt = new Date();
   await user.save();
 
-  // Delete token
-  await Token.deleteMany({ userId: user._id, type: "emailVerification" });
+  // Delete the token
+  await Token.deleteOne({ _id: tokenDoc._id });
 
   logger.info(`Email verified for user: ${user.email}`);
 
   res.json({
     success: true,
     message: "Email verified successfully",
-    user: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isEmailVerified: user.isEmailVerified,
-    },
   });
 });
 
+export { generateAccessToken, generateRefreshToken };

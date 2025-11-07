@@ -3,11 +3,12 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import NavMinimal from "./components/NavMinimal";
 import FooterMinimal from "./components/FooterMinimal";
+import SkipLink from "./components/SkipLink";
 
 // Lazy load pages for better performance
 const Home = lazy(() => import("./pages/Home"));
-const Login = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
+const Login = lazy(() => import("./pages/LoginEnhanced"));
+const Register = lazy(() => import("./pages/RegisterEnhanced"));
 const Ideas = lazy(() => import("./pages/Ideas"));
 const IdeaDetail = lazy(() => import("./pages/IdeaDetail"));
 const CreateIdea = lazy(() => import("./pages/CreateIdea"));
@@ -355,8 +356,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-[linear-gradient(180deg,#05030a,#0b0712)] text-neutral-800 dark:text-neutral-100">
       <BrowserRouter>
+        <SkipLink />
         <NavMinimal />
-        <main className="container-wide py-8 md:py-12 min-h-[calc(100vh-8rem)]">
+        <main id="main-content" className="container-wide py-8 md:py-12 min-h-[calc(100vh-8rem)]">
           <AnimatedRoutes />
         </main>
         <FooterMinimal />

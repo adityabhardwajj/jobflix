@@ -4,32 +4,23 @@ import {
   resetPassword,
   requestEmailVerification,
   verifyEmail,
+  refreshAccessToken,
+  revokeRefreshToken,
 } from "../controllers/authController.js";
+import { protect } from "../middleware/authMiddleware.js";
 import {
-  validatePasswordReset,
+  validateRequestPasswordReset,
   validateResetPassword,
+  validateVerifyEmail,
 } from "../middleware/validation.js";
-import { authRateLimiter, passwordResetRateLimiter } from "../middleware/security.js";
 
 const router = express.Router();
 
-router.post(
-  "/request-password-reset",
-  authRateLimiter,
-  validatePasswordReset,
-  requestPasswordReset
-);
-
-router.post(
-  "/reset-password",
-  passwordResetRateLimiter,
-  validateResetPassword,
-  resetPassword
-);
-
-router.post("/request-email-verify", requestEmailVerification);
-
-router.get("/verify-email", verifyEmail);
+router.post("/request-password-reset", validateRequestPasswordReset, requestPasswordReset);
+router.post("/reset-password", validateResetPassword, resetPassword);
+router.post("/request-email-verify", protect, requestEmailVerification);
+router.get("/verify-email", validateVerifyEmail, verifyEmail);
+router.post("/refresh", refreshAccessToken);
+router.post("/revoke", protect, revokeRefreshToken);
 
 export default router;
-

@@ -1,13 +1,11 @@
 import asyncHandler from "express-async-handler";
-import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import Idea from "../models/Idea.js";
 import Job from "../models/Job.js";
 import Token from "../models/Token.js";
 import emailService from "../services/emailService.js";
 import logger from "../utils/logger.js";
-
-const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+import { generateAccessToken, generateRefreshToken } from "./authController.js";
 
 // Register new user
 export const registerUser = asyncHandler(async (req, res) => {
@@ -40,6 +38,13 @@ export const registerUser = asyncHandler(async (req, res) => {
     // Don't fail registration if email fails
   }
 
+  // Generate tokens
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = await generateRefreshToken(user._id, {
+    userAgent: req.headers["user-agent"],
+    ip: req.ip,
+  });
+
   res.status(201).json({
     success: true,
     data: {
@@ -48,7 +53,8 @@ export const registerUser = asyncHandler(async (req, res) => {
       email: user.email,
       role: user.role,
       isEmailVerified: user.isEmailVerified,
-      token: generateToken(user._id),
+      token: accessToken,
+      refreshToken,
     },
     message: "Registration successful. Please check your email to verify your account.",
   });
@@ -76,7 +82,14 @@ export const loginUser = asyncHandler(async (req, res) => {
     });
   }
 
-  logger.info(`User logged in: ${user.email}`);
+          logger.info(`User logged in: ${user.email}`);
+
+  // Generate tokens
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = await generateRefreshToken(user._id, {
+    userAgent: req.headers["user-agent"],
+    ip: req.ip,
+  });
 
   res.json({
     success: true,
@@ -86,7 +99,8 @@ export const loginUser = asyncHandler(async (req, res) => {
       email: user.email,
       role: user.role,
       isEmailVerified: user.isEmailVerified,
-      token: generateToken(user._id),
+      token: accessToken,
+      refreshToken,
     },
   });
 });
